@@ -36,7 +36,40 @@ describe('AllExceptionsFilter', () => {
         success: false,
         statusCode: HttpStatus.NOT_FOUND,
         message: 'Not found',
+        error: 'Not found',
         path: '/api/v1/test',
+      }),
+    );
+  });
+
+  it('should use canonical permission and validation error names', () => {
+    filter.catch(
+      new HttpException(
+        { statusCode: 403, message: 'Permission denied', error: 'Forbidden' },
+        HttpStatus.FORBIDDEN,
+      ),
+      mockHost,
+    );
+
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: HttpStatus.FORBIDDEN,
+        error: 'Permission denied',
+      }),
+    );
+
+    filter.catch(
+      new HttpException(
+        { statusCode: 422, message: 'email must be an email', error: 'Unprocessable Entity' },
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      ),
+      mockHost,
+    );
+
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        error: 'Invalid request',
       }),
     );
   });

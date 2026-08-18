@@ -1,4 +1,8 @@
-import { LoggerService, ValidationPipe } from '@nestjs/common';
+import {
+  LoggerService,
+  UnprocessableEntityException,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -25,6 +29,7 @@ async function bootstrap() {
   const corsOrigin = configService.get<string>('cors.origin', '*');
 
   app.setGlobalPrefix(apiPrefix);
+  app.set('trust proxy', 1);
 
   app.use(helmet());
   app.use(compression());
@@ -43,6 +48,15 @@ async function bootstrap() {
       transform: true,
       transformOptions: {
         enableImplicitConversion: true,
+      },
+      exceptionFactory: (errors) => {
+        const messages = errors.flatMap((error) =>
+          Object.values(error.constraints ?? {}),
+        );
+        return new UnprocessableEntityException({
+          message: messages.length > 0 ? messages : 'Invalid request',
+          error: 'Invalid request',
+        });
       },
     }),
   );

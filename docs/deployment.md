@@ -46,7 +46,9 @@ SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 SUPABASE_JWT_SECRET=<jwt-secret>
 ```
 
-The process will not start in production if the three Supabase keys/URL are missing.
+The process will not start in production if the three Supabase keys/URL or the JWT secret are missing, or if `CORS_ORIGIN` is `*`.
+
+See `docs/production-readiness.md` for the full security audit, backup restore, and go-live checklist.
 
 ### Docker
 

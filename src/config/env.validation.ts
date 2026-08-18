@@ -92,12 +92,20 @@ export function validate(config: Record<string, unknown>) {
       'SUPABASE_URL',
       'SUPABASE_ANON_KEY',
       'SUPABASE_SERVICE_ROLE_KEY',
+      'SUPABASE_JWT_SECRET',
     ] as const;
 
     const missing = required.filter((key) => !validatedConfig[key]);
     if (missing.length > 0) {
       throw new Error(
         `Missing required production environment variables: ${missing.join(', ')}`,
+      );
+    }
+
+    const origin = validatedConfig.CORS_ORIGIN?.trim() ?? '';
+    if (!origin || origin === '*') {
+      throw new Error(
+        'CORS_ORIGIN must be an explicit production origin (wildcard * is not allowed)',
       );
     }
   }

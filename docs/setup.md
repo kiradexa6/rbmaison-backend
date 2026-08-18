@@ -23,12 +23,12 @@ cp .env.example .env
 | `PORT` | No | HTTP port. Default `3000`. |
 | `API_PREFIX` | No | Global prefix. Default `api/v1`. |
 | `CORS_ENABLED` | No | Default `true`. |
-| `CORS_ORIGIN` | No | Comma-separated origins or `*`. |
+| `CORS_ORIGIN` | Production: explicit origin | Comma-separated origins. `*` is allowed only outside production. |
 | `LOG_LEVEL` | No | Winston level. |
 | `SUPABASE_URL` | Production yes | Project URL. Local default `http://127.0.0.1:54321`. |
 | `SUPABASE_ANON_KEY` | Production yes | Public anon key. Used with a user access token so RLS applies. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production yes | Server-only key. Bypasses RLS. Never send this to a browser or mobile app. |
-| `SUPABASE_JWT_SECRET` | Later (Auth guards) | JWT secret from Project Settings → API. Server-only. |
+| `SUPABASE_JWT_SECRET` | Production yes | JWT secret from Project Settings → API. Server-only. Never send to a client. |
 
 Copy keys from **Supabase Dashboard → Project Settings → API**, or from `npx supabase status` when running locally.
 

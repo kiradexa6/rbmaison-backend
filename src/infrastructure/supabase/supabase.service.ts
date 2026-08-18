@@ -33,12 +33,19 @@ export class SupabaseService {
     return Boolean(this.url && this.anonKey && this.serviceRoleKey);
   }
 
+  getPublicUrl(): string | undefined {
+    return this.url;
+  }
+
   getAdminClient(): TypedSupabaseClient {
     if (!this.url || !this.serviceRoleKey) {
       throw new Error(
         'Supabase service role client is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
       );
     }
+
+    // Service role bypasses RLS. It must stay on the API server and never
+    // be returned to a browser, mobile app, or public health payload.
 
     if (!this.adminClient) {
       this.adminClient = createClient<Database>(this.url, this.serviceRoleKey, {
@@ -50,6 +57,21 @@ export class SupabaseService {
     }
 
     return this.adminClient;
+  }
+
+  getAnonClient(): TypedSupabaseClient {
+    if (!this.url || !this.anonKey) {
+      throw new Error(
+        'Supabase anon client is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.',
+      );
+    }
+
+    return createClient<Database>(this.url, this.anonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
   }
 
   asUser(accessToken: string): TypedSupabaseClient {

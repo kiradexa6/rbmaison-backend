@@ -43,15 +43,41 @@ describe('Environment Validation', () => {
     ).toThrow(/SUPABASE_URL/);
   });
 
+  it('should require an explicit CORS origin and JWT secret in production', () => {
+    expect(() =>
+      validate({
+        NODE_ENV: 'production',
+        SUPABASE_URL: 'https://example.supabase.co',
+        SUPABASE_ANON_KEY: 'anon-key',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
+        CORS_ORIGIN: '*',
+      }),
+    ).toThrow(/SUPABASE_JWT_SECRET/);
+
+    expect(() =>
+      validate({
+        NODE_ENV: 'production',
+        SUPABASE_URL: 'https://example.supabase.co',
+        SUPABASE_ANON_KEY: 'anon-key',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
+        SUPABASE_JWT_SECRET: 'jwt-secret',
+        CORS_ORIGIN: '*',
+      }),
+    ).toThrow(/CORS_ORIGIN/);
+  });
+
   it('should accept production configuration with Supabase credentials', () => {
     const result = validate({
       NODE_ENV: 'production',
       SUPABASE_URL: 'https://example.supabase.co',
       SUPABASE_ANON_KEY: 'anon-key',
       SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
+      SUPABASE_JWT_SECRET: 'jwt-secret',
+      CORS_ORIGIN: 'https://rbmaison.example',
     });
 
     expect(result.NODE_ENV).toBe('production');
     expect(result.SUPABASE_URL).toBe('https://example.supabase.co');
+    expect(result.SUPABASE_JWT_SECRET).toBe('jwt-secret');
   });
 });

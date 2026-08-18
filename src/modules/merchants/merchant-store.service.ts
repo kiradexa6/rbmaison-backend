@@ -1,0 +1,81 @@
+import {
+  Injectable,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { SupabaseService } from '../../infrastructure/supabase/supabase.service';
+import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { assertSupabase } from '../products/supabase-error';
+
+@Injectable()
+export class MerchantStoreService {
+  constructor(private readonly supabaseService: SupabaseService) {}
+
+  async getStore(user: AuthenticatedUser) {
+    const { data, error } = await this.client(user).rpc(
+      'merchant_store_profile',
+    );
+    const rows = assertSupabase({ data, error }) ?? [];
+    const profile = rows[0];
+    if (!profile) {
+      throw new NotFoundException('Merchant store not found');
+    }
+    return profile;
+  }
+
+  async shopDetails(user: AuthenticatedUser) {
+    const client = this.client(user);
+    const [
+      { data: details, error: detailsError },
+      { data: products, error: productsError },
+      { data: financials, error: financialsError },
+    ] = await Promise.all([
+      client.rpc('shop_details'),
+      client.rpc('store_shop_products'),
+      client.rpc('shop_financials'),
+    ]);
+
+    const rows = assertSupabase({ data: details, error: detailsError }) ?? [];
+    const store = rows[0];
+    if (!store) {
+      throw new NotFoundException('Merchant store not found');
+    }
+
+    return {
+      ...store,
+      products: assertSupabase({ data: products, error: productsError }) ?? [],
+      financials:
+        assertSupabase({ data: financials, error: financialsError }) ?? [],
+    };
+  }
+
+  async shopStatistics(user: AuthenticatedUser) {
+    const client = this.client(user);
+    const [
+      { data: stats, error: statsError },
+      { data: financials, error: financialsError },
+    ] = await Promise.all([
+      client.rpc('shop_statistics'),
+      client.rpc('shop_financials'),
+    ]);
+
+    const rows = assertSupabase({ data: stats, error: statsError }) ?? [];
+    const statistics = rows[0];
+    if (!statistics) {
+      throw new NotFoundException('Merchant store not found');
+    }
+
+    return {
+      ...statistics,
+      financials:
+        assertSupabase({ data: financials, error: financialsError }) ?? [],
+    };
+  }
+
+  private client(user: AuthenticatedUser) {
+    if (!this.supabaseService.isConfigured()) {
+      throw new ServiceUnavailableException('Supabase is not configured');
+    }
+    return this.supabaseService.asUser(user.accessToken);
+  }
+}

@@ -9,6 +9,14 @@ import {
 import { Request, Response } from 'express';
 import { ApiErrorResponse } from '../interfaces/api-response.interface';
 
+const CANONICAL_ERRORS: Partial<Record<number, string>> = {
+  [HttpStatus.UNAUTHORIZED]: 'Unauthorized',
+  [HttpStatus.FORBIDDEN]: 'Permission denied',
+  [HttpStatus.NOT_FOUND]: 'Not found',
+  [HttpStatus.CONFLICT]: 'Conflict',
+  [HttpStatus.UNPROCESSABLE_ENTITY]: 'Invalid request',
+};
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
@@ -27,7 +35,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       exception instanceof HttpException ? exception.getResponse() : null;
 
     let message: string | string[] = 'Internal server error';
-    let error = 'Internal Server Error';
+    let error = CANONICAL_ERRORS[status] ?? 'Internal Server Error';
 
     if (typeof exceptionResponse === 'string') {
       message = exceptionResponse;
@@ -41,9 +49,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? responseMessage
         : String(responseMessage);
       error =
-        'error' in exceptionResponse
+        CANONICAL_ERRORS[status] ??
+        ('error' in exceptionResponse
           ? String((exceptionResponse as { error: unknown }).error)
-          : (HttpStatus[status] ?? error);
+          : (HttpStatus[status] ?? error));
     } else if (exception instanceof Error) {
       message = exception.message;
     }

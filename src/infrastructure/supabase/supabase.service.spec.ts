@@ -29,5 +29,7 @@ describe('SupabaseService', () => {
 
     expect(service.isConfigured()).toBe(true);
     expect(() => service.asUser('')).toThrow(/Access token/);
+    expect(service.getPublicUrl()).toBe('http://127.0.0.1:54321');
+    expect(service.getAnonClient()).toBeDefined();
   });
 });
