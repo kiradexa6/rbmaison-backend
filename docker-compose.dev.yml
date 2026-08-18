@@ -13,11 +13,15 @@ services:
       - /app/node_modules
     environment:
       NODE_ENV: development
-      APP_NAME: ${APP_NAME:-TradingPlatform}
+      APP_NAME: ${APP_NAME:-RBMaison}
       PORT: 3000
       API_PREFIX: ${API_PREFIX:-api/v1}
       CORS_ENABLED: ${CORS_ENABLED:-true}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       LOG_LEVEL: ${LOG_LEVEL:-debug}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
     env_file:
       - .env

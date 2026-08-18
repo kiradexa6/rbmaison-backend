@@ -10,12 +10,16 @@ services:
       - '${PORT:-3000}:3000'
     environment:
       NODE_ENV: production
-      APP_NAME: ${APP_NAME:-TradingPlatform}
+      APP_NAME: ${APP_NAME:-RBMaison}
       PORT: 3000
       API_PREFIX: ${API_PREFIX:-api/v1}
       CORS_ENABLED: ${CORS_ENABLED:-true}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
     healthcheck:
       test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000/api/v1/health']
       interval: 30s

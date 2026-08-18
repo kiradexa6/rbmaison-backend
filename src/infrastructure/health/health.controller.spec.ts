@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HealthController } from './health.controller';
 import { HealthCheckService, MemoryHealthIndicator } from '@nestjs/terminus';
+import { SupabaseHealthIndicator } from './supabase.health';
 
 describe('HealthController', () => {
   let controller: HealthController;
@@ -32,6 +33,14 @@ describe('HealthController', () => {
             checkRSS: jest
               .fn()
               .mockReturnValue({ memory_rss: { status: 'up' } }),
+          },
+        },
+        {
+          provide: SupabaseHealthIndicator,
+          useValue: {
+            isHealthy: jest.fn().mockResolvedValue({
+              supabase: { status: 'up', configured: false },
+            }),
           },
         },
       ],

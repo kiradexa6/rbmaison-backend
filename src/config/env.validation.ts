@@ -23,7 +23,7 @@ class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
-  APP_NAME: string = 'TradingPlatform';
+  APP_NAME: string = 'RBMaison';
 
   @Type(() => Number)
   @IsNumber()
@@ -56,6 +56,22 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   LOG_LEVEL: string = 'info';
+
+  @IsString()
+  @IsOptional()
+  SUPABASE_URL?: string;
+
+  @IsString()
+  @IsOptional()
+  SUPABASE_ANON_KEY?: string;
+
+  @IsString()
+  @IsOptional()
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+
+  @IsString()
+  @IsOptional()
+  SUPABASE_JWT_SECRET?: string;
 }
 
 export function validate(config: Record<string, unknown>) {
@@ -69,6 +85,21 @@ export function validate(config: Record<string, unknown>) {
 
   if (errors.length > 0) {
     throw new Error(errors.toString());
+  }
+
+  if (validatedConfig.NODE_ENV === Environment.Production) {
+    const required = [
+      'SUPABASE_URL',
+      'SUPABASE_ANON_KEY',
+      'SUPABASE_SERVICE_ROLE_KEY',
+    ] as const;
+
+    const missing = required.filter((key) => !validatedConfig[key]);
+    if (missing.length > 0) {
+      throw new Error(
+        `Missing required production environment variables: ${missing.join(', ')}`,
+      );
+    }
   }
 
   return validatedConfig;

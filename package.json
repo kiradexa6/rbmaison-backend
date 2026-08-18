@@ -1,7 +1,7 @@
 {
   "name": "TradingPlatform",
   "version": "0.0.1",
-  "description": "Production-grade NestJS backend foundation for a trading platform",
+  "description": "Production backend foundation for the R&B MAISON luxury marketplace",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
@@ -21,7 +21,12 @@
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "docker:dev": "docker compose -f docker-compose.dev.yml up"
+    "docker:dev": "docker compose -f docker-compose.dev.yml up",
+    "db:start": "npx supabase start",
+    "db:stop": "npx supabase stop",
+    "db:reset": "npx supabase db reset",
+    "db:push": "npx supabase db push",
+    "db:diff": "npx supabase db diff"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -29,6 +34,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/terminus": "^11.1.1",
+    "@supabase/supabase-js": "^2.112.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "compression": "^1.8.1",
@@ -72,7 +78,9 @@
     ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
-    "setupFiles": ["<rootDir>/../test/jest-setup.ts"],
+    "setupFiles": [
+      "<rootDir>/../test/jest-setup.ts"
+    ],
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },

@@ -27,3 +27,7 @@ npm-debug.log*
 
 # Test
 .nyc_output/
+
+# Supabase CLI
+supabase/.temp/
+supabase/.branches/
