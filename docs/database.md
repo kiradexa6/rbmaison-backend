@@ -56,7 +56,9 @@ products
 | `notifications` | In-app notifications generated from real events. `read_status`: `unread` / `read`. Content is immutable. |
 | `merchants` | One merchant per auth user. Verification: `pending`, `approved`, `rejected`. `wholesale_enabled` gates new listings. |
 | `merchant_credit_scores` | Append-only credit history. Current score is the latest row. Admin adjustments are logged. |
-| `store_followers` | Real follower rows counted by shop statistics. |
+| `store_followers` | Real follower rows counted by shop statistics when no admin displayed count is set. |
+| `store_viewer_settings` | Admin-set displayed store viewer count used by `shop_statistics`. |
+| `admin_historical_data_runs` | Audit/control rows for admin historical generation (not a financial table). |
 | `stores` | One store per merchant. Status: `pending`, `active`, `suspended`. |
 | `wallets` | Merchant wallet per currency. Balance is ledger-controlled. |
 | `wallet_transactions` | Append-only ledger. Types: `deposit`, `withdrawal`, `order_payment`, `admin_adjustment`, `refund`, `profit_release`, `wholesale_return`. |
@@ -73,6 +75,8 @@ products
 | `merchant_product_listings` | Merchant offer against a catalogue product. `sales_price_snapshot`, generated `wholesale_price`, status `active` / `inactive` / `removed` (plus legacy `pending` / `suspended`). |
 | `orders` | Customer purchase from one merchant store. Status: `pending` → `paid` → `shipping` → `delivered` (plus `processing`, `cancelled`, and legacy values). |
 | `order_items` | Line items with `listing_id`, snapshotted sales/wholesale, generated `merchant_profit`. |
+
+See also [historical data generator](./historical-data.md).
 
 ## Views
 
@@ -97,7 +101,14 @@ products
 | `admin_approve_merchant_application` | Admin | Creates merchant + store, assigns merchant role, seeds credit score 100, unlocks merchant APIs. Also approves invitation-created merchants by merchant ID. |
 | `admin_reject_merchant_application` | Admin | Rejects a pending application (no merchant created) or invitation merchant verification. |
 | `shop_details` | Merchant / admin | Store profile: id, name, logo, description, owner, country, status, approval date. Merchants only see their own store. |
-| `shop_statistics` | Merchant / admin | Real counts from listings, orders, order_items, store_followers, and latest credit score. |
+| `shop_statistics` | Merchant / admin | Real counts from listings, orders, order_items, displayed store viewers (`store_viewer_settings` or `store_followers`), and latest credit score. |
+| `admin_adjust_store_viewers` | Admin | Sets displayed store viewer count. |
+| `admin_user_historical_overview` | Admin | Selected account + allowed historical categories. |
+| `admin_preview_historical_data` | Admin | Dry-run estimate for one existing account. No financial writes. |
+| `admin_start_historical_run` / `admin_execute_historical_run` | Admin | Generate history for the selected account only. Atomic execute; notifications suppressed. |
+| `admin_fail_historical_run` | Admin | Persist a failed run after execute rolls back. |
+| `admin_list_historical_runs` / `admin_get_historical_run` | Admin | Run history. |
+| `admin_reverse_historical_run` | Admin | Safe reversal with compensating ledger entries; refuses if later activity depends on the run. |
 | `shop_financials` | Merchant / admin | Wallet balances and completed `wallet_transactions` totals (deposits, withdrawals, order payments, profit releases, refunds). |
 | `store_shop_products` | Merchant / admin | Listed products with image, category, sales price, unit profit, listing date, status. Does not expose catalogue edit APIs. |
 | `store_shop_orders` | Merchant / admin | Store orders with product, customer, amount, wholesale, profit, status. |
@@ -182,7 +193,7 @@ Additional database enforcement (not RLS alone):
 - Suspended or blocked profiles set `auth.users.banned_until`, which prevents further Auth sessions.
 - Listing wholesale price is generated (`sales_price * 0.80`). Merchants cannot supply it or edit catalogue product fields.
 - `merchants.wholesale_enabled` can only be changed by an admin. Merchants can only remove their own listings.
-- Shop statistics are SQL aggregates from `merchant_product_listings`, `orders`, `order_items`, `wallet_transactions`, `wallets`, `store_followers`, and `merchant_credit_scores`. They are never hardcoded.
+- Shop statistics are SQL aggregates from `merchant_product_listings`, `orders`, `order_items`, `wallet_transactions`, `wallets`, displayed store viewers (`store_viewer_settings` or `store_followers`), and `merchant_credit_scores`. They are never hardcoded.
 - Credit score history cannot be updated or deleted. Every admin score change inserts a row and an `admin_activity_logs` entry.
 - Notification content cannot be created, edited, or deleted by clients. Users may only mark their own rows read. Realtime uses `postgres_changes` on `notifications` filtered by `user_id`.
 - Direct INSERT/UPDATE/DELETE is revoked from `anon` and `authenticated` on wallets, ledger, deposit/withdrawal requests, orders, order items, listings, notifications, applications, credit scores, and admin logs. Mutations go through `SECURITY DEFINER` RPCs.

@@ -17,6 +17,7 @@ import { AdminStoresService } from './admin-stores.service';
 import {
   AdjustStoreBalanceDto,
   AdjustStoreCreditDto,
+  AdjustStoreViewersDto,
   AdminSearchStoresQueryDto,
   SetStoreStatusDto,
   SetWholesaleAccessDto,
@@ -94,5 +95,14 @@ export class AdminStoresController {
     @Body() dto: SetWholesaleAccessDto,
   ) {
     return this.adminStoresService.setWholesaleAccess(user, id, dto.enabled);
+  }
+
+  @Post(':id/viewers')
+  adjustViewers(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AdjustStoreViewersDto,
+  ) {
+    return this.adminStoresService.adjustViewers(user, id, dto);
   }
 }

@@ -16,6 +16,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { WalletsModule } from './modules/wallets/wallets.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { HistoricalDataModule } from './modules/historical-data/historical-data.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AuthModule } from './modules/auth/auth.module';
     OrdersModule,
     WalletsModule,
     NotificationsModule,
+    HistoricalDataModule,
     HealthModule,
   ],
   providers: [

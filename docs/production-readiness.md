@@ -121,6 +121,7 @@ Failed authorization attempts are logged **without** the bearer token.
 | --- | --- | --- |
 | Default | 120 | All others |
 | Auth | 5 | `/auth/signup`, `/auth/login`, `/auth/logout` |
+| Historical | 3 | Historical preview, generate, reverse |
 | Financial | 10 | Deposits, withdrawals, admin approve/reject/adjust |
 | Orders | 20 | Create order, confirm order |
 | Health | skipped | `GET /health` |
@@ -131,7 +132,7 @@ Limits are in-process (per API instance). Put a shared limiter in front of multi
 
 - Request/response: `LoggingInterceptor` + Winston JSON
 - Security: `SupabaseAuthGuard` / `RolesGuard` warn on 401/403
-- Admin: `admin_activity_logs` for approve/reject merchant, wallet adjust, user suspend, store changes
+- Admin: `admin_activity_logs` for approve/reject merchant, wallet adjust, user suspend, store changes, historical generation
 - Financial: ledger rows for deposits, withdrawals, `order_payment`, `profit_release`
 
 ## Deployment steps

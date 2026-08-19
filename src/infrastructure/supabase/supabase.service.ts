@@ -14,11 +14,12 @@ export class SupabaseService {
   private adminClient: TypedSupabaseClient | null = null;
 
   constructor(private readonly configService: ConfigService) {
-    this.url = this.configService.get<string>('supabase.url');
-    this.anonKey = this.configService.get<string>('supabase.anonKey');
-    this.serviceRoleKey = this.configService.get<string>(
-      'supabase.serviceRoleKey',
-    );
+    this.url = this.configService.get<string>('supabase.url')?.trim() || undefined;
+    this.anonKey =
+      this.configService.get<string>('supabase.anonKey')?.trim() || undefined;
+    this.serviceRoleKey =
+      this.configService.get<string>('supabase.serviceRoleKey')?.trim() ||
+      undefined;
 
     if (this.isConfigured()) {
       this.logger.log('Supabase client configured');

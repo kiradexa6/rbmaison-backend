@@ -9,6 +9,7 @@ import { assertSupabase } from '../products/supabase-error';
 import {
   AdjustStoreBalanceDto,
   AdjustStoreCreditDto,
+  AdjustStoreViewersDto,
   AdminSearchStoresQueryDto,
   SetStoreStatusDto,
 } from './dto/merchant.dto';
@@ -174,6 +175,22 @@ export class AdminStoresService {
     const { data, error } = await this.client(user).rpc(
       'admin_set_store_wholesale_access',
       { p_store_id: storeId, p_enabled: enabled },
+    );
+    return assertSupabase({ data, error }, 'Store not found');
+  }
+
+  async adjustViewers(
+    user: AuthenticatedUser,
+    storeId: string,
+    dto: AdjustStoreViewersDto,
+  ) {
+    const { data, error } = await this.client(user).rpc(
+      'admin_adjust_store_viewers',
+      {
+        p_store_id: storeId,
+        p_viewer_count: dto.viewerCount,
+        p_reason: dto.reason.trim(),
+      },
     );
     return assertSupabase({ data, error }, 'Store not found');
   }

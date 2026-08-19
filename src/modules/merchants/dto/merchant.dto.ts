@@ -196,6 +196,19 @@ export class SetStoreStatusDto {
   reason?: string;
 }
 
+export class AdjustStoreViewersDto {
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(1000000)
+  viewerCount!: number;
+
+  @IsString()
+  @MinLength(3)
+  @MaxLength(240)
+  reason!: string;
+}
+
 export class AdminActivityLogsQueryDto {
   @IsOptional()
   @IsString()

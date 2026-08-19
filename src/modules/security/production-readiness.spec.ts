@@ -20,6 +20,7 @@ import {
   THROTTLE_AUTH_LIMIT,
   THROTTLE_DEFAULT_LIMIT,
   THROTTLE_FINANCIAL_LIMIT,
+  THROTTLE_HISTORICAL_LIMIT,
   THROTTLE_ORDER_LIMIT,
 } from '../../shared/common/constants/throttle.constants';
 
@@ -416,12 +417,13 @@ describe('production readiness — wallet protection and API hardening', () => {
     ).toBeInstanceOf(UnprocessableEntityException);
   });
 
-  it('rate-limits auth tighter than financial actions, and financial tighter than orders', () => {
+  it('rate-limits auth tighter than historical generation, and historical tighter than financial actions', () => {
     expect(THROTTLE_AUTH_LIMIT).toBe(5);
+    expect(THROTTLE_HISTORICAL_LIMIT).toBe(3);
     expect(THROTTLE_FINANCIAL_LIMIT).toBe(10);
     expect(THROTTLE_ORDER_LIMIT).toBe(20);
     expect(THROTTLE_DEFAULT_LIMIT).toBe(120);
-    expect(THROTTLE_AUTH_LIMIT).toBeLessThan(THROTTLE_FINANCIAL_LIMIT);
+    expect(THROTTLE_HISTORICAL_LIMIT).toBeLessThan(THROTTLE_FINANCIAL_LIMIT);
     expect(THROTTLE_FINANCIAL_LIMIT).toBeLessThan(THROTTLE_ORDER_LIMIT);
   });
 

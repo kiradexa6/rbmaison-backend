@@ -80,4 +80,50 @@ describe('Environment Validation', () => {
     expect(result.SUPABASE_URL).toBe('https://example.supabase.co');
     expect(result.SUPABASE_JWT_SECRET).toBe('jwt-secret');
   });
+
+  it('trims trailing whitespace and newlines on exact production variable names', () => {
+    const result = validate({
+      NODE_ENV: 'production\n',
+      SUPABASE_URL: 'https://sbcyoaswsjfhhkypdniu.supabase.co \n',
+      SUPABASE_ANON_KEY: ' anon-key\r\n',
+      SUPABASE_SERVICE_ROLE_KEY: 'service-role-key  ',
+      SUPABASE_JWT_SECRET: '\tjwt-secret',
+      CORS_ORIGIN: ' https://rbmaison.example\n',
+    });
+
+    expect(result.NODE_ENV).toBe('production');
+    expect(result.SUPABASE_URL).toBe(
+      'https://sbcyoaswsjfhhkypdniu.supabase.co',
+    );
+    expect(result.SUPABASE_ANON_KEY).toBe('anon-key');
+    expect(result.SUPABASE_SERVICE_ROLE_KEY).toBe('service-role-key');
+    expect(result.SUPABASE_JWT_SECRET).toBe('jwt-secret');
+    expect(result.CORS_ORIGIN).toBe('https://rbmaison.example');
+  });
+
+  it('does not read altered production variable names', () => {
+    expect(() =>
+      validate({
+        NODE_ENV: 'production',
+        'SUPABASE_URL ': 'https://example.supabase.co',
+        SUPABASE_ANON_KEY: 'anon-key',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
+        SUPABASE_JWT_SECRET: 'jwt-secret',
+        CORS_ORIGIN: 'https://rbmaison.example',
+      }),
+    ).toThrow(/SUPABASE_URL/);
+  });
+
+  it('treats whitespace-only production secrets as missing', () => {
+    expect(() =>
+      validate({
+        NODE_ENV: 'production',
+        SUPABASE_URL: '   \n',
+        SUPABASE_ANON_KEY: 'anon-key',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
+        SUPABASE_JWT_SECRET: 'jwt-secret',
+        CORS_ORIGIN: 'https://rbmaison.example',
+      }),
+    ).toThrow(/SUPABASE_URL/);
+  });
 });

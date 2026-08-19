@@ -32,4 +32,14 @@ describe('SupabaseService', () => {
     expect(service.getPublicUrl()).toBe('http://127.0.0.1:54321');
     expect(service.getAnonClient()).toBeDefined();
   });
+
+  it('treats whitespace-only credentials as unconfigured', () => {
+    const config = {
+      get: jest.fn(() => '  \n'),
+    } as unknown as ConfigService;
+
+    const service = new SupabaseService(config);
+
+    expect(service.isConfigured()).toBe(false);
+  });
 });

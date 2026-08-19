@@ -53,7 +53,8 @@ export function mapSupabaseError(
     message.includes('already listed') ||
     message.includes('duplicate') ||
     message.includes('already settled') ||
-    message.includes('already sent for shipping')
+    message.includes('already sent for shipping') ||
+    message.includes('already running')
   ) {
     if (message.includes('already settled')) {
       return new ConflictException('Order already settled');
@@ -66,7 +67,8 @@ export function mapSupabaseError(
     message.includes('cannot be marked paid') ||
     message.includes('sales price snapshot') ||
     message.includes('immutable') ||
-    message.includes('cannot be changed')
+    message.includes('cannot be changed') ||
+    message.includes('cannot be safely reversed')
   ) {
     return new UnprocessableEntityException({
       message: error.message,

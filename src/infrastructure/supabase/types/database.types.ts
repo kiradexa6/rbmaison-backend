@@ -90,6 +90,25 @@ export type NotificationType =
   | 'withdrawal_rejected'
   | 'admin_action';
 export type NotificationReadStatus = 'unread' | 'read';
+export type HistoricalRunStatus =
+  | 'preview'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'reversed';
+export type HistoricalActivityLevel = 'low' | 'medium' | 'high';
+export type HistoricalCategory =
+  | 'wallet'
+  | 'deposits'
+  | 'withdrawals'
+  | 'orders'
+  | 'viewers';
+export type HistoricalRangePreset =
+  | 'last_7_days'
+  | 'last_30_days'
+  | 'last_90_days'
+  | 'last_180_days'
+  | 'custom';
 
 type RowInsertUpdate<TRow, TInsert, TUpdate> = {
   Row: TRow;
@@ -854,6 +873,81 @@ export interface Database {
         },
         {
           quantity?: number;
+        }
+      >;
+      store_viewer_settings: RowInsertUpdate<
+        {
+          store_id: string;
+          viewer_count: number;
+          reason: string;
+          updated_by: string;
+          created_at: string;
+          updated_at: string;
+        },
+        {
+          store_id: string;
+          viewer_count: number;
+          reason: string;
+          updated_by: string;
+          created_at?: string;
+          updated_at?: string;
+        },
+        {
+          viewer_count?: number;
+          reason?: string;
+          updated_by?: string;
+          updated_at?: string;
+        }
+      >;
+      admin_historical_data_runs: RowInsertUpdate<
+        {
+          id: string;
+          admin_id: string;
+          target_user_id: string;
+          merchant_id: string | null;
+          store_id: string | null;
+          period_from: string;
+          period_to: string;
+          categories: string[];
+          activity_level: HistoricalActivityLevel;
+          idempotency_key: string | null;
+          status: HistoricalRunStatus;
+          created_counts: Json;
+          created_ids: Json;
+          snapshot: Json;
+          error_message: string | null;
+          created_at: string;
+          completed_at: string | null;
+          reversed_at: string | null;
+        },
+        {
+          id?: string;
+          admin_id: string;
+          target_user_id: string;
+          merchant_id?: string | null;
+          store_id?: string | null;
+          period_from: string;
+          period_to: string;
+          categories: string[];
+          activity_level: HistoricalActivityLevel;
+          idempotency_key?: string | null;
+          status?: HistoricalRunStatus;
+          created_counts?: Json;
+          created_ids?: Json;
+          snapshot?: Json;
+          error_message?: string | null;
+          created_at?: string;
+          completed_at?: string | null;
+          reversed_at?: string | null;
+        },
+        {
+          status?: HistoricalRunStatus;
+          created_counts?: Json;
+          created_ids?: Json;
+          snapshot?: Json;
+          error_message?: string | null;
+          completed_at?: string | null;
+          reversed_at?: string | null;
         }
       >;
     };
@@ -1647,6 +1741,70 @@ export interface Database {
         Args: { p_merchant_id: string };
         Returns: string;
       };
+      store_displayed_viewer_count: {
+        Args: { p_store_id: string };
+        Returns: number;
+      };
+      admin_adjust_store_viewers: {
+        Args: {
+          p_store_id: string;
+          p_viewer_count: number;
+          p_reason: string;
+        };
+        Returns: Database['public']['Tables']['store_viewer_settings']['Row'];
+      };
+      admin_resolve_historical_target: {
+        Args: { p_user_id: string };
+        Returns: Json;
+      };
+      admin_preview_historical_data: {
+        Args: {
+          p_user_id: string;
+          p_categories: string[];
+          p_activity_level: HistoricalActivityLevel;
+          p_preset: string;
+          p_from?: string;
+          p_to?: string;
+        };
+        Returns: Json;
+      };
+      admin_start_historical_run: {
+        Args: {
+          p_user_id: string;
+          p_categories: string[];
+          p_activity_level: HistoricalActivityLevel;
+          p_preset: string;
+          p_confirm: boolean;
+          p_idempotency_key?: string;
+          p_from?: string;
+          p_to?: string;
+        };
+        Returns: Database['public']['Tables']['admin_historical_data_runs']['Row'];
+      };
+      admin_execute_historical_run: {
+        Args: { p_run_id: string };
+        Returns: Database['public']['Tables']['admin_historical_data_runs']['Row'];
+      };
+      admin_fail_historical_run: {
+        Args: { p_run_id: string; p_error?: string };
+        Returns: Database['public']['Tables']['admin_historical_data_runs']['Row'];
+      };
+      admin_reverse_historical_run: {
+        Args: { p_run_id: string };
+        Returns: Database['public']['Tables']['admin_historical_data_runs']['Row'];
+      };
+      admin_get_historical_run: {
+        Args: { p_run_id: string };
+        Returns: Database['public']['Tables']['admin_historical_data_runs']['Row'];
+      };
+      admin_list_historical_runs: {
+        Args: { p_user_id: string };
+        Returns: Database['public']['Tables']['admin_historical_data_runs']['Row'][];
+      };
+      admin_user_historical_overview: {
+        Args: { p_user_id: string };
+        Returns: Json;
+      };
     };
     Enums: {
       user_role: UserRole;
@@ -1672,6 +1830,8 @@ export interface Database {
       withdrawal_request_status: WithdrawalRequestStatus;
       notification_type: NotificationType;
       notification_read_status: NotificationReadStatus;
+      historical_run_status: HistoricalRunStatus;
+      historical_activity_level: HistoricalActivityLevel;
     };
     CompositeTypes: Record<string, never>;
   };
