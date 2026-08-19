@@ -120,7 +120,7 @@ Failed authorization attempts are logged **without** the bearer token.
 | Class | Limit | Routes |
 | --- | --- | --- |
 | Default | 120 | All others |
-| Auth | 5 | `/auth/signup`, `/auth/login`, `/auth/logout` |
+| Auth | 20 | `/auth/signup`, `/auth/login`, `/auth/logout` |
 | Historical | 3 | Historical preview, generate, reverse |
 | Financial | 10 | Deposits, withdrawals, admin approve/reject/adjust |
 | Orders | 20 | Create order, confirm order |

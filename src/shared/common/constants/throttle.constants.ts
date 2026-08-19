@@ -1,7 +1,8 @@
 export const THROTTLE_TTL_MS = 60_000;
 
 export const THROTTLE_DEFAULT_LIMIT = 120;
-export const THROTTLE_AUTH_LIMIT = 5;
+/** Login/signup/logout: 20 POSTs per minute per IP, including successful attempts. */
+export const THROTTLE_AUTH_LIMIT = 20;
 export const THROTTLE_HISTORICAL_LIMIT = 3;
 export const THROTTLE_FINANCIAL_LIMIT = 10;
 export const THROTTLE_ORDER_LIMIT = 20;
