@@ -54,7 +54,8 @@ export function mapSupabaseError(
     message.includes('duplicate') ||
     message.includes('already settled') ||
     message.includes('already sent for shipping') ||
-    message.includes('already running')
+    message.includes('already running') ||
+    message.includes('already exist for this account')
   ) {
     if (message.includes('already settled')) {
       return new ConflictException('Order already settled');

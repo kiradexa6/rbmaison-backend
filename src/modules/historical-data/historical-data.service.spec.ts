@@ -11,6 +11,10 @@ import { AdminStoresService } from '../merchants/admin-stores.service';
 import { mapSupabaseError } from '../products/supabase-error';
 import { AuthService } from '../auth/auth.service';
 import { HistoricalDataService } from './historical-data.service';
+import {
+  defaultHistoryTypes,
+  historyTypesToCategories,
+} from './historical-records.mapper';
 import { THROTTLE_HISTORICAL_LIMIT } from '../../shared/common/constants/throttle.constants';
 
 const admin: AuthenticatedUser = {
@@ -99,6 +103,9 @@ function completedRun(overrides: Record<string, unknown> = {}) {
       deposits: 12,
       withdrawals: 0,
       orders: 16,
+      profits: 6,
+      payments: 12,
+      billing: 40,
       walletTransactions: 40,
     },
     created_ids: {},
@@ -108,6 +115,71 @@ function completedRun(overrides: Record<string, unknown> = {}) {
     completed_at: '2026-08-19T10:01:00.000Z',
     reversed_at: null,
     ...overrides,
+  };
+}
+
+function historicalClient(handlers: {
+  start?: unknown;
+  execute?: unknown;
+  runs?: unknown[];
+  preview?: unknown;
+} = {}) {
+  return {
+    rpc: jest.fn(async (name: string) => {
+      if (name === 'admin_user_historical_overview') {
+        return {
+          data: {
+            target: {
+              userId: merchant.id,
+              name: 'Maison Merchant',
+              email: merchant.email,
+            },
+            allowedCategories: [
+              'wallet',
+              'deposits',
+              'withdrawals',
+              'orders',
+              'viewers',
+            ],
+          },
+          error: null,
+        };
+      }
+      if (name === 'admin_list_historical_runs') {
+        return { data: handlers.runs ?? [], error: null };
+      }
+      if (name === 'admin_preview_historical_data') {
+        return {
+          data:
+            handlers.preview ?? {
+              status: 'preview',
+              target: { userId: merchant.id, email: merchant.email },
+              estimated: { deposits: 15, orders: 16 },
+            },
+          error: null,
+        };
+      }
+      if (name === 'admin_start_historical_run') {
+        return typeof handlers.start === 'function'
+          ? (handlers.start as () => unknown)()
+          : (handlers.start ?? {
+              data: { ...completedRun(), status: 'running' },
+              error: null,
+            });
+      }
+      if (name === 'admin_execute_historical_run') {
+        return typeof handlers.execute === 'function'
+          ? (handlers.execute as () => unknown)()
+          : (handlers.execute ?? { data: completedRun(), error: null });
+      }
+      if (name === 'admin_enrich_historical_run_counts') {
+        return { data: completedRun().created_counts, error: null };
+      }
+      if (name === 'admin_fail_historical_run') {
+        return { data: { ...completedRun(), status: 'failed' }, error: null };
+      }
+      return { data: null, error: null };
+    }),
   };
 }
 
@@ -139,16 +211,7 @@ function roleContext(role: AuthenticatedUser['role'], required: string[]) {
 
 describe('admin historical data generator', () => {
   it('resolves the selected account before preview', async () => {
-    const client = {
-      rpc: jest.fn().mockResolvedValue({
-        data: {
-          status: 'preview',
-          target: { userId: merchant.id, email: merchant.email },
-          estimated: { deposits: 15, orders: 16 },
-        },
-        error: null,
-      }),
-    };
+    const client = historicalClient();
     const result = await serviceOf(client).preview(admin, merchant.id, {
       ...previewDto,
       categories: [...previewDto.categories],
@@ -156,7 +219,10 @@ describe('admin historical data generator', () => {
 
     expect(client.rpc).toHaveBeenCalledWith(
       'admin_preview_historical_data',
-      expect.objectContaining({ p_user_id: merchant.id }),
+      expect.objectContaining({
+        p_user_id: merchant.id,
+        p_preset: 'last_180_days',
+      }),
     );
     expect(client.rpc).not.toHaveBeenCalledWith(
       'admin_execute_historical_run',
@@ -189,18 +255,7 @@ describe('admin historical data generator', () => {
   });
 
   it('generates history only for the selected existing account', async () => {
-    const client = {
-      rpc: jest.fn(async (name: string) => {
-        if (name === 'admin_start_historical_run') {
-          return { data: { ...completedRun(), status: 'running' }, error: null };
-        }
-        if (name === 'admin_execute_historical_run') {
-          return { data: completedRun(), error: null };
-        }
-        return { data: null, error: null };
-      }),
-    };
-
+    const client = historicalClient();
     const result = await serviceOf(client).generate(admin, merchant.id, generateDto);
 
     expect(client.rpc).toHaveBeenCalledWith(
@@ -208,6 +263,7 @@ describe('admin historical data generator', () => {
       expect.objectContaining({
         p_user_id: merchant.id,
         p_confirm: true,
+        p_preset: 'last_180_days',
         p_idempotency_key: generateDto.idempotencyKey,
       }),
     );
@@ -218,12 +274,42 @@ describe('admin historical data generator', () => {
     expect(result.target.userId).not.toBe(otherUserId);
     expect(result.created.orders).toBe(16);
     expect(result.created.deposits).toBe(12);
+    expect(result.created.profits).toBe(6);
+    expect(result.created.payments).toBe(12);
+    expect(result.processed.find((item) => item.type === 'billing')?.processed).toBe(40);
+  });
+
+  it('accepts the Control Center generate payload without dates or categories', async () => {
+    const client = historicalClient();
+    const result = await serviceOf(client).generate(admin, merchant.id, {
+      months: 6,
+      volume: 'medium',
+    });
+
+    expect(client.rpc).toHaveBeenCalledWith(
+      'admin_start_historical_run',
+      expect.objectContaining({
+        p_user_id: merchant.id,
+        p_preset: 'last_180_days',
+        p_activity_level: 'medium',
+        p_categories: expect.arrayContaining([
+          'wallet',
+          'deposits',
+          'withdrawals',
+          'orders',
+        ]),
+      }),
+    );
+    expect(result.status).toBe('completed');
+    expect(result.period.months).toBe(6);
+    expect(result.deposits).toBe(12);
+    expect(result.orders).toBe(16);
   });
 
   it('returns the existing run when an idempotent generate is retried', async () => {
-    const client = {
-      rpc: jest.fn().mockResolvedValue({ data: completedRun(), error: null }),
-    };
+    const client = historicalClient({
+      start: { data: completedRun(), error: null },
+    });
 
     const result = await serviceOf(client).generate(admin, merchant.id, generateDto);
 
@@ -239,21 +325,28 @@ describe('admin historical data generator', () => {
     expect(result.runId).toBe(runId);
   });
 
+  it('returns the completed run instead of creating duplicate historical records', async () => {
+    const client = historicalClient({
+      runs: [completedRun()],
+    });
+
+    const result = await serviceOf(client).generate(admin, merchant.id, generateDto);
+
+    expect(client.rpc).not.toHaveBeenCalledWith(
+      'admin_start_historical_run',
+      expect.anything(),
+    );
+    expect(result.duplicate).toBe(true);
+    expect(result.created.orders).toBe(16);
+  });
+
   it('marks the run failed and rolls back generation when execute errors', async () => {
-    const client = {
-      rpc: jest.fn(async (name: string) => {
-        if (name === 'admin_start_historical_run') {
-          return { data: { ...completedRun(), status: 'running' }, error: null };
-        }
-        if (name === 'admin_execute_historical_run') {
-          return {
-            data: null,
-            error: { message: 'Wallet accounting is inconsistent after historical generation' },
-          };
-        }
-        return { data: { ...completedRun(), status: 'failed' }, error: null };
-      }),
-    };
+    const client = historicalClient({
+      execute: {
+        data: null,
+        error: { message: 'Wallet accounting is inconsistent after historical generation' },
+      },
+    });
 
     await expect(
       serviceOf(client).generate(admin, merchant.id, generateDto),
@@ -351,11 +444,6 @@ describe('admin historical data generator', () => {
     expect(result.status).toBe('reversed');
   });
 
-  it('throttles generate, preview, and reverse tighter than ordinary reads', () => {
-    expect(THROTTLE_HISTORICAL_LIMIT).toBe(3);
-    expect(THROTTLE_HISTORICAL_LIMIT).toBeLessThan(10);
-  });
-
   it('does not generate history during signup', async () => {
     const asUser = jest.fn();
     const anon = {
@@ -380,6 +468,31 @@ describe('admin historical data generator', () => {
 
     expect(anon.auth.signUp).toHaveBeenCalled();
     expect(asUser).not.toHaveBeenCalled();
+  });
+
+  it('throttles generate, preview, and reverse tighter than ordinary reads', () => {
+    expect(THROTTLE_HISTORICAL_LIMIT).toBe(3);
+    expect(THROTTLE_HISTORICAL_LIMIT).toBeLessThan(10);
+  });
+
+  it('maps Control Center history types onto existing record categories', () => {
+    expect(historyTypesToCategories(['profits', 'payments'])).toEqual(['orders']);
+    expect(historyTypesToCategories(['billing'])).toEqual(
+      expect.arrayContaining(['wallet', 'deposits', 'withdrawals', 'orders']),
+    );
+    expect(
+      defaultHistoryTypes(['wallet', 'deposits', 'withdrawals', 'orders']),
+    ).toEqual(
+      expect.arrayContaining([
+        'deposits',
+        'withdrawals',
+        'profits',
+        'orders',
+        'payments',
+        'billing',
+        'wallet',
+      ]),
+    );
   });
 });
 

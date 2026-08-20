@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(14);
+SELECT plan(15);
 
 SELECT has_function('public', 'admin_preview_historical_data', 'preview historical data exists');
 SELECT has_function('public', 'admin_start_historical_run', 'start historical run exists');
@@ -10,6 +10,7 @@ SELECT has_function('public', 'admin_reverse_historical_run', 'reverse historica
 SELECT has_function('public', 'admin_list_historical_runs', 'list historical runs exists');
 SELECT has_function('public', 'admin_get_historical_run', 'get historical run exists');
 SELECT has_function('public', 'admin_user_historical_overview', 'historical overview exists');
+SELECT has_function('public', 'admin_enrich_historical_run_counts', 'historical result counts exist');
 SELECT has_function('public', 'admin_adjust_store_viewers', 'adjust store viewers exists');
 SELECT has_function('public', 'store_displayed_viewer_count', 'displayed viewer count exists');
 SELECT has_table('public', 'admin_historical_data_runs', 'historical run table exists');

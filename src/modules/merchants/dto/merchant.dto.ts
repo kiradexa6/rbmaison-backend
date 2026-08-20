@@ -84,6 +84,12 @@ export class AdminSearchUsersQueryDto {
   @IsString()
   @MaxLength(120)
   q?: string;
+
+  /** Control Center search box — alias of `q`. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  search?: string;
 }
 
 export class SubmitMerchantApplicationDto {

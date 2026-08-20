@@ -1753,6 +1753,10 @@ export interface Database {
         };
         Returns: Database['public']['Tables']['store_viewer_settings']['Row'];
       };
+      admin_enrich_historical_run_counts: {
+        Args: { p_run_id: string };
+        Returns: Json;
+      };
       admin_resolve_historical_target: {
         Args: { p_user_id: string };
         Returns: Json;

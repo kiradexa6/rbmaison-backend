@@ -18,9 +18,10 @@ export class AdminUsersService {
       p_user_id: query.userId ?? undefined,
       p_store_id: query.storeId ?? undefined,
       p_merchant_id: query.merchantId ?? undefined,
-      p_query: query.q ?? undefined,
+      p_query: query.q ?? query.search ?? undefined,
     });
-    return assertSupabase({ data, error }) ?? [];
+    const rows = assertSupabase({ data, error }) ?? [];
+    return rows.map((row) => this.presentUser(row));
   }
 
   async get(user: AuthenticatedUser, userId: string) {
@@ -46,6 +47,20 @@ export class AdminUsersService {
       { p_user_id: userId, p_status: 'active' },
     );
     return assertSupabase({ data, error }, 'User not found');
+  }
+
+  private presentUser(row: {
+    user_id: string;
+    full_name: string | null;
+    email: string;
+    [key: string]: unknown;
+  }) {
+    return {
+      ...row,
+      id: row.user_id,
+      userId: row.user_id,
+      name: row.full_name,
+    };
   }
 
   async activityLogs(

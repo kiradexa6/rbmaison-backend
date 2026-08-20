@@ -1,71 +1,106 @@
-# Admin-controlled historical account data
+# Admin Historical Records
 
-Admins can generate up to **six months** of prior activity for **one existing account** they explicitly select. This is not a seeder, not demo data, and it never runs on signup.
+Admins generate up to **six months** of prior activity for **one existing account** they explicitly select. This is not a seeder, not demo data, and it never runs on signup.
+
+The Admin Control Center at `https://rbmaisons.com/admin` (route `/control-center/historical`) searches a user, starts generation, and displays the **backend result**. Records are written to the existing deposit, withdrawal, order, profit-settlement, and wallet tables so they appear in the normal user history APIs.
+
+## Control Center flow
+
+1. Search users: `GET /api/v1/admin/users?search=`
+2. Select a user (`id` / `user_id`)
+3. Optional: choose history types, or omit them for **Select All**
+4. Generate: `POST /api/v1/admin/users/:id/historical-data/generate`
+5. Poll/read the returned run (and `GET .../historical-data/runs`) for processed counts
+
+The backend always uses **today minus 6 months through today**. Do not send start/end dates. The Control Center `months` field is accepted and ignored.
 
 ## Access
 
-All routes require a valid admin JWT (`SupabaseAuthGuard` + `RolesGuard` + `is_admin()` inside the RPCs).
+All routes require an admin JWT (`SupabaseAuthGuard` + `RolesGuard` + `is_admin()` inside the RPCs).
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/admin/users/:id/historical-data` | Selected account, allowed categories, limits, recent runs |
-| `POST` | `/api/v1/admin/users/:id/historical-data/preview` | Dry-run estimate. Writes only an admin audit row. |
-| `POST` | `/api/v1/admin/users/:id/historical-data/generate` | Confirm and generate for that `user_id` only |
-| `GET` | `/api/v1/admin/users/:id/historical-data/runs` | Runs for the selected account |
+| `GET` | `/api/v1/admin/users` | Search (`q` or `search`). Rows include `id` = `user_id` |
+| `GET` | `/api/v1/admin/users/:id/historical-data` | Selected account, history types, period, `records` for the Control Center table |
+| `POST` | `/api/v1/admin/users/:id/historical-data/preview` | Dry-run estimate |
+| `POST` | `/api/v1/admin/users/:id/historical-data/generate` | Generate for that account only |
+| `GET` | `/api/v1/admin/users/:id/historical-data/runs` | Runs + processed counts |
 | `GET` | `/api/v1/admin/historical-data/runs/:runId` | One run |
-| `POST` | `/api/v1/admin/historical-data/runs/:runId/reverse` | Safe reversal when later activity does not depend on the run |
-| `POST` | `/api/v1/admin/stores/:id/viewers` | Set the displayed store viewer count |
-
-The JSON body must include `userId` matching `:id`. The backend resolves the profile itself; the client selection is never trusted.
+| `POST` | `/api/v1/admin/historical-data/runs/:runId/reverse` | Safe reversal |
 
 Preview / generate / reverse are throttled to **3 requests / minute**.
 
-## Categories
+## Generate body
 
-Chosen independently:
+The live Control Center sends:
 
-| Category | Who | What is created |
-| --- | --- | --- |
-| `wallet` | Merchant | USD ledger deposits on the existing wallet |
-| `deposits` | Merchant | `wallet_deposit_requests` plus approval/rejection through existing admin deposit RPCs |
-| `withdrawals` | Merchant | `withdrawal_requests` plus approval/rejection through existing admin withdrawal RPCs |
-| `orders` | Merchant with a store and **eligible listings** | Store orders, items, wholesale `order_payment`, and settlement (`wholesale_return` + `profit_release`) |
-| `viewers` | Store | `store_viewer_settings` used by `shop_statistics` |
+```json
+{ "months": 6, "volume": "medium" }
+```
 
-Customer-only accounts cannot receive wallet, deposit, or withdrawal history (those tables are merchant-owned). Order generation is not attached to another merchant's store.
+That is enough. Path `:id` is the selected user. Confirmation is implied. The backend supplies a stable idempotency key.
 
-If orders are requested and the merchant has no active listing+variant, generation fails with:
+Optional fields (Lovable / newer UI):
 
-`This merchant has no eligible products available for historical order generation.`
+| Field | Notes |
+| --- | --- |
+| `historyTypes` | `deposits`, `withdrawals`, `profits`, `orders`, `payments`, `billing`, `wallet`, `walletTransactions`, `viewers` |
+| `selectAll` | All types the account can receive (not viewers) |
+| `categories` | Low-level generator categories |
+| `activityLevel` / `volume` | `low` \| `medium` \| `high` |
+| `confirm` | Default true. `false` is rejected |
+| `idempotencyKey` | Optional; backend generates one per user + type set |
+| `userId` | If sent, must match `:id` |
 
-Products are never auto-created.
+`from`, `to`, and `rangePreset` are ignored. Period is always `last_180_days`.
 
-## Range and limits
+## History types → existing records
 
-Presets: `last_7_days`, `last_30_days`, `last_90_days`, `last_180_days`, `custom`.
+There is no second history system. UI types map onto existing tables:
 
-- Maximum window: **180 days**
-- No future `to` date
-- Activity levels `low` / `medium` / `high` cap deposits, withdrawals, and orders
-- Configurable ceilings: `HISTORICAL_MAX_*` in `.env` (see `.env.example`)
+| History type | Created through |
+| --- | --- |
+| Deposits | `wallet_deposit_requests` + existing approve/reject RPCs |
+| Withdrawals | `withdrawal_requests` + existing approve/reject RPCs |
+| Orders | `orders` + `order_items` using existing listings/variants |
+| Payments | `wallet_transactions` type `order_payment` on those orders |
+| Profits | `order_items.merchant_profit` + `profit_release` settlement on completed orders |
+| Billing / wallet | Existing `wallet_transactions` (credits, debits, deposits, wholesale, profit) |
 
-## Accounting
+Profits are never created without their order. Amounts come from listing sales/wholesale prices and the existing settlement math. IDs are `gen_random_uuid()`.
 
-Generation uses the existing ledger, deposit, withdrawal, order, and settlement tables. Wallet balances stay consistent with completed `wallet_transactions`. Historical timestamps are backdated across the selected period; events are not placed on a fixed 24-hour grid.
+Customer-only accounts cannot receive wallet/deposit/withdrawal history. Orders require an eligible active listing.
 
-User-facing notifications are suppressed during generation (`app.suppress_notifications`).
+## Duplicate protection
 
-Execute is a single database transaction. If it fails, generated rows roll back and the run is marked `failed`.
+A second generate for the same account and overlapping types returns the existing completed run (or 409 if a different overlapping run exists). Reverse first to generate again. In-flight runs are rejected.
 
-## Reversal
+Execute is one database transaction. Failure rolls generated rows back and marks the run `failed`.
 
-Completed runs can be reversed only when:
+## Result shape (`data`)
 
-- generated orders are still `pending` / `awaiting_payment` / `cancelled`
-- no later wallet activity or store orders depend on the run
+Flattened counts are for the Control Center table:
 
-Otherwise the API refuses and explains why. Completed ledger rows are never deleted; balances are restored with `admin_adjustment` when reversal is safe.
+```json
+{
+  "id": "run-uuid",
+  "runId": "run-uuid",
+  "status": "completed",
+  "progress": "completed",
+  "deposits": 12,
+  "withdrawals": 8,
+  "orders": 16,
+  "profits": 6,
+  "payments": 12,
+  "billing": 40,
+  "walletTransactions": 40,
+  "created": { "deposits": 12, "withdrawals": 8, "orders": 16, "profits": 6, "payments": 12, "billing": 40, "walletTransactions": 40 },
+  "processed": [{ "type": "deposits", "processed": 12 }]
+}
+```
 
-## Store viewers
+Counts come from the run, not from the frontend.
 
-`POST /api/v1/admin/stores/:id/viewers` sets `store_viewer_settings.viewer_count`. `shop_statistics.total_followers` uses that displayed count when present, otherwise the real `store_followers` count.
+## User-facing history
+
+After generation, the same merchant/customer APIs return the rows: deposit history, withdrawal history, orders, wallet/billing transactions. Do not show admin-run metadata on those APIs.

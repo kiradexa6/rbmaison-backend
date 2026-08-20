@@ -369,6 +369,34 @@ describe('admin user management', () => {
     });
   });
 
+  it('accepts Control Center search and exposes id for row selection', async () => {
+    const client = {
+      rpc: jest.fn().mockResolvedValue({
+        data: [
+          {
+            user_id: customer.id,
+            profile_id: customer.id,
+            full_name: 'Jane Customer',
+            email: customer.email,
+          },
+        ],
+        error: null,
+      }),
+    };
+    const service = serviceOf(AdminUsersService, client);
+    const rows = await service.search(admin, { search: 'jane' });
+
+    expect(client.rpc).toHaveBeenCalledWith('admin_search_users', {
+      p_email: undefined,
+      p_user_id: undefined,
+      p_store_id: undefined,
+      p_merchant_id: undefined,
+      p_query: 'jane',
+    });
+    expect(rows[0]?.id).toBe(customer.id);
+    expect(rows[0]?.name).toBe('Jane Customer');
+  });
+
   it('suspends and restores users through admin status RPCs', async () => {
     const client = {
       rpc: jest.fn().mockResolvedValue({
