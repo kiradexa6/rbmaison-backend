@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { THROTTLE_FINANCIAL } from '../../shared/common/constants/throttle.constants';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -26,6 +26,11 @@ export class MerchantWalletsController {
     return this.merchantWalletsService.getWallets(user);
   }
 
+  @Get('balance')
+  balance(@CurrentUser() user: AuthenticatedUser) {
+    return this.merchantWalletsService.getBalance(user);
+  }
+
   @Get('transactions')
   history(@CurrentUser() user: AuthenticatedUser) {
     return this.merchantWalletsService.history(user);
@@ -44,6 +49,14 @@ export class MerchantWalletsController {
     return this.merchantWalletsService.myDeposits(user);
   }
 
+  @Get('deposits/:id')
+  getDeposit(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.merchantWalletsService.getDeposit(user, id);
+  }
+
   @Post('deposits')
   @Throttle(THROTTLE_FINANCIAL)
   completeDeposit(
@@ -56,6 +69,14 @@ export class MerchantWalletsController {
   @Get('withdrawals')
   myWithdrawals(@CurrentUser() user: AuthenticatedUser) {
     return this.merchantWalletsService.myWithdrawals(user);
+  }
+
+  @Get('withdrawals/:id')
+  getWithdrawal(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.merchantWalletsService.getWithdrawal(user, id);
   }
 
   @Post('withdrawals')

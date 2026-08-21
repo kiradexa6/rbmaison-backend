@@ -109,6 +109,64 @@ export class AdminProductsService {
     return assertSupabase({ data, error }) ?? [];
   }
 
+  async getProduct(user: AuthenticatedUser, productId: string) {
+    const { data, error } = await this.asUser(user)
+      .from('products')
+      .select(
+        `
+        *,
+        brand:brands(id, name, slug, logo, status),
+        category:product_categories(id, name, slug, parent_id),
+        images:product_images(
+          id,
+          storage_path,
+          image_url,
+          alt_text,
+          position,
+          sort_order,
+          is_primary
+        ),
+        variants:product_variants(
+          id,
+          sku,
+          size,
+          color,
+          price_override,
+          is_active,
+          inventory(
+            quantity,
+            reserved_quantity,
+            available_quantity,
+            availability
+          )
+        )
+      `,
+      )
+      .eq('id', productId)
+      .maybeSingle();
+    const row = assertSupabase({ data, error }, 'Product not found');
+    if (!row) {
+      throw new NotFoundException('Product not found');
+    }
+    return row;
+  }
+
+  async listBrands(user: AuthenticatedUser) {
+    const { data, error } = await this.asUser(user)
+      .from('brands')
+      .select('*')
+      .order('name', { ascending: true });
+    return assertSupabase({ data, error }) ?? [];
+  }
+
+  async listCategories(user: AuthenticatedUser) {
+    const { data, error } = await this.asUser(user)
+      .from('product_categories')
+      .select('*')
+      .order('name', { ascending: true });
+    return assertSupabase({ data, error }) ?? [];
+  }
+
   async addImage(
     user: AuthenticatedUser,
     productId: string,

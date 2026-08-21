@@ -133,6 +133,42 @@ describe('AdminWalletsService', () => {
     expect(result.status).toBe('completed');
   });
 
+  it('searches wallet transactions through admin RPC', async () => {
+    const client = {
+      rpc: jest.fn().mockResolvedValue({
+        data: [
+          {
+            transaction_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+            merchant_id: merchantId,
+            type: 'deposit',
+            amount: '1000',
+            currency: 'USDT',
+            status: 'completed',
+          },
+        ],
+        error: null,
+      }),
+    };
+    const service = new AdminWalletsService({
+      isConfigured: () => true,
+      asUser: jest.fn().mockReturnValue(client),
+    } as never);
+
+    const rows = await service.searchTransactions(admin, {
+      currency: 'USDT',
+      type: 'deposit',
+    });
+
+    expect(client.rpc).toHaveBeenCalledWith(
+      'admin_search_wallet_transactions',
+      expect.objectContaining({
+        p_currency: 'USDT',
+        p_type: 'deposit',
+      }),
+    );
+    expect(rows).toHaveLength(1);
+  });
+
   it('blocks merchants from admin wallet routes', () => {
     const reflector = {
       getAllAndOverride: jest.fn().mockReturnValue(['admin']),

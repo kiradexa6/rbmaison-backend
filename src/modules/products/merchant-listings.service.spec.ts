@@ -267,6 +267,35 @@ describe('MerchantListingsService', () => {
     );
   });
 
+  it('loads listing detail through merchant_listing_detail RPC', async () => {
+    const client = {
+      rpc: jest.fn().mockResolvedValue({
+        data: [
+          {
+            listing_id: listingId,
+            product_id: productId,
+            product_name: 'Maison Tote',
+            in_stock: true,
+            images: [],
+            variants: [],
+          },
+        ],
+        error: null,
+      }),
+    };
+    const service = new MerchantListingsService({
+      isConfigured: () => true,
+      asUser: jest.fn().mockReturnValue(client),
+    } as never);
+
+    const detail = await service.getListedProduct(merchant, listingId);
+
+    expect(client.rpc).toHaveBeenCalledWith('merchant_listing_detail', {
+      p_listing_id: listingId,
+    });
+    expect(detail.product_name).toBe('Maison Tote');
+  });
+
   it('removes a listing so it no longer appears in product management', async () => {
     const client = {
       rpc: jest

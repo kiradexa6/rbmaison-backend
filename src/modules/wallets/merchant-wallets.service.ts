@@ -24,6 +24,17 @@ export class MerchantWalletsService {
     return assertSupabase({ data, error }) ?? [];
   }
 
+  async getBalance(user: AuthenticatedUser) {
+    const wallets = await this.getWallets(user);
+    return {
+      wallets,
+      totals: wallets.reduce<Record<string, string>>((acc, wallet) => {
+        acc[wallet.currency] = wallet.balance;
+        return acc;
+      }, {}),
+    };
+  }
+
   async history(user: AuthenticatedUser) {
     const wallets = await this.getWallets(user);
     const ids = wallets.map((wallet) => wallet.id);
@@ -78,6 +89,21 @@ export class MerchantWalletsService {
     return assertSupabase({ data, error }) ?? [];
   }
 
+  async getDeposit(user: AuthenticatedUser, depositId: string) {
+    const { data, error } = await this.client(user)
+      .from('wallet_deposit_requests')
+      .select(
+        'id, asset, network, amount, wallet_address_used, status, created_at, reviewed_at',
+      )
+      .eq('id', depositId)
+      .maybeSingle();
+    const row = assertSupabase({ data, error }, 'Deposit request not found');
+    if (!row) {
+      throw new NotFoundException('Deposit request not found');
+    }
+    return row;
+  }
+
   async createWithdrawal(
     user: AuthenticatedUser,
     dto: CreateWithdrawalRequestDto,
@@ -102,6 +128,21 @@ export class MerchantWalletsService {
       )
       .order('created_at', { ascending: false });
     return assertSupabase({ data, error }) ?? [];
+  }
+
+  async getWithdrawal(user: AuthenticatedUser, withdrawalId: string) {
+    const { data, error } = await this.client(user)
+      .from('withdrawal_requests')
+      .select(
+        'id, asset, network, amount, destination_address, status, created_at, reviewed_at',
+      )
+      .eq('id', withdrawalId)
+      .maybeSingle();
+    const row = assertSupabase({ data, error }, 'Withdrawal request not found');
+    if (!row) {
+      throw new NotFoundException('Withdrawal request not found');
+    }
+    return row;
   }
 
   private client(user: AuthenticatedUser) {

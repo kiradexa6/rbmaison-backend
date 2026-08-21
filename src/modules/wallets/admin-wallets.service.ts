@@ -10,6 +10,7 @@ import {
   AddWalletAddressDto,
   AdjustMerchantWalletDto,
   AdminDepositSearchQueryDto,
+  AdminWalletTransactionSearchQueryDto,
   AdminWithdrawalSearchQueryDto,
   UpdateWalletAddressDto,
 } from './dto/wallet.dto';
@@ -92,6 +93,36 @@ export class AdminWalletsService {
     return assertSupabase({ data, error }) ?? [];
   }
 
+  async getDeposit(user: AuthenticatedUser, id: string) {
+    const { data, error } = await this.client(user)
+      .from('wallet_deposit_requests')
+      .select(
+        `
+        id,
+        asset,
+        network,
+        amount,
+        wallet_address_used,
+        status,
+        created_at,
+        reviewed_at,
+        merchant:merchants(
+          id,
+          store_id,
+          store_name,
+          user_id
+        )
+      `,
+      )
+      .eq('id', id)
+      .maybeSingle();
+    const row = assertSupabase({ data, error }, 'Deposit request not found');
+    if (!row) {
+      throw new NotFoundException('Deposit request not found');
+    }
+    return row;
+  }
+
   async approveDeposit(user: AuthenticatedUser, id: string) {
     const { data, error } = await this.client(user).rpc(
       'admin_approve_deposit',
@@ -120,6 +151,54 @@ export class AdminWalletsService {
         p_status: query.status ?? undefined,
         p_store_id: query.storeId ?? undefined,
         p_merchant_query: query.merchant ?? undefined,
+      },
+    );
+    return assertSupabase({ data, error }) ?? [];
+  }
+
+  async getWithdrawal(user: AuthenticatedUser, id: string) {
+    const { data, error } = await this.client(user)
+      .from('withdrawal_requests')
+      .select(
+        `
+        id,
+        asset,
+        network,
+        amount,
+        destination_address,
+        status,
+        created_at,
+        reviewed_at,
+        merchant:merchants(
+          id,
+          store_id,
+          store_name,
+          user_id
+        )
+      `,
+      )
+      .eq('id', id)
+      .maybeSingle();
+    const row = assertSupabase({ data, error }, 'Withdrawal request not found');
+    if (!row) {
+      throw new NotFoundException('Withdrawal request not found');
+    }
+    return row;
+  }
+
+  async searchTransactions(
+    user: AuthenticatedUser,
+    query: AdminWalletTransactionSearchQueryDto,
+  ) {
+    const { data, error } = await this.client(user).rpc(
+      'admin_search_wallet_transactions',
+      {
+        p_store_id: query.storeId ?? undefined,
+        p_merchant_id: query.merchantId ?? undefined,
+        p_merchant_query: query.merchant ?? undefined,
+        p_currency: query.currency ?? undefined,
+        p_type: query.type ?? undefined,
+        p_status: query.status ?? undefined,
       },
     );
     return assertSupabase({ data, error }) ?? [];

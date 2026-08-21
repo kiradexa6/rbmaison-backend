@@ -82,8 +82,12 @@ export class MerchantListingsService {
   }
 
   async getListedProduct(user: AuthenticatedUser, listingId: string) {
-    const products = await this.myProducts(user);
-    const listing = products.find((item) => item.listing_id === listingId);
+    const { data, error } = await this.client(user).rpc(
+      'merchant_listing_detail',
+      { p_listing_id: listingId },
+    );
+    const rows = assertSupabase({ data, error }) ?? [];
+    const listing = rows[0];
     if (!listing) {
       throw new NotFoundException('Listing not found');
     }

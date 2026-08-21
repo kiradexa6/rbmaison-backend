@@ -1128,6 +1128,34 @@ export interface Database {
           listed_at: string;
         }[];
       };
+      merchant_listing_detail: {
+        Args: { p_listing_id: string };
+        Returns: {
+          listing_id: string;
+          listing_status: ListingStatus;
+          listed_at: string;
+          product_id: string;
+          product_name: string;
+          product_slug: string;
+          product_description: string | null;
+          brand_id: string;
+          brand_name: string;
+          category_id: string;
+          category_name: string;
+          gender: ProductGender;
+          collection: string | null;
+          sales_price: string;
+          sales_price_snapshot: string;
+          wholesale_price: string;
+          discount_percentage: string;
+          catalogue_price: string;
+          currency: SupportedCurrency;
+          in_stock: boolean;
+          primary_image_url: string | null;
+          images: Json;
+          variants: Json;
+        }[];
+      };
       merchant_store_profile: {
         Args: Record<string, never>;
         Returns: {
@@ -1430,6 +1458,33 @@ export interface Database {
       admin_reject_withdrawal: {
         Args: { p_request_id: string };
         Returns: Database['public']['Tables']['withdrawal_requests']['Row'];
+      };
+      admin_search_wallet_transactions: {
+        Args: {
+          p_store_id?: string;
+          p_merchant_id?: string;
+          p_merchant_query?: string;
+          p_currency?: SupportedCurrency;
+          p_type?: WalletTransactionType;
+          p_status?: WalletTransactionStatus;
+        };
+        Returns: {
+          transaction_id: string;
+          wallet_id: string;
+          merchant_id: string;
+          store_id: string | null;
+          store_name: string;
+          merchant_name: string | null;
+          type: WalletTransactionType;
+          amount: string;
+          currency: SupportedCurrency;
+          direction: WalletTransactionDirection;
+          status: WalletTransactionStatus;
+          reference_type: string | null;
+          reference_id: string | null;
+          description: string | null;
+          created_at: string;
+        }[];
       };
       admin_adjust_merchant_wallet: {
         Args: {

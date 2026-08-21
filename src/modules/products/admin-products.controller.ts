@@ -44,6 +44,14 @@ export class AdminProductsController {
     return this.adminProductsService.listProducts(user);
   }
 
+  @Get('products/:id')
+  getProduct(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.adminProductsService.getProduct(user, id);
+  }
+
   @Post('products')
   create(
     @CurrentUser() user: AuthenticatedUser,
@@ -173,6 +181,11 @@ export class AdminProductsController {
     return this.adminProductsService.createBrand(user, dto);
   }
 
+  @Get('brands')
+  listBrands(@CurrentUser() user: AuthenticatedUser) {
+    return this.adminProductsService.listBrands(user);
+  }
+
   @Patch('brands/:id')
   updateBrand(
     @CurrentUser() user: AuthenticatedUser,
@@ -188,6 +201,11 @@ export class AdminProductsController {
     @Body() dto: CreateCategoryDto,
   ) {
     return this.adminProductsService.createCategory(user, dto);
+  }
+
+  @Get('categories')
+  listCategories(@CurrentUser() user: AuthenticatedUser) {
+    return this.adminProductsService.listCategories(user);
   }
 
   @Patch('categories/:id')

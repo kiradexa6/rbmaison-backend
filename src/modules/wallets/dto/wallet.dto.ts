@@ -129,3 +129,45 @@ export class AdjustMerchantWalletDto {
   @MaxLength(240)
   reason!: string;
 }
+
+export class AdminWalletTransactionSearchQueryDto {
+  @IsOptional()
+  @IsUUID()
+  storeId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  merchantId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  merchant?: string;
+
+  @IsOptional()
+  @IsEnum(['USD', 'BTC', 'ETH', 'USDT'] as const)
+  currency?: SupportedCurrency;
+
+  @IsOptional()
+  @IsEnum([
+    'deposit',
+    'withdrawal',
+    'order_payment',
+    'admin_adjustment',
+    'refund',
+    'profit_release',
+    'wholesale_return',
+  ] as const)
+  type?:
+    | 'deposit'
+    | 'withdrawal'
+    | 'order_payment'
+    | 'admin_adjustment'
+    | 'refund'
+    | 'profit_release'
+    | 'wholesale_return';
+
+  @IsOptional()
+  @IsEnum(['pending', 'completed', 'failed', 'cancelled'] as const)
+  status?: 'pending' | 'completed' | 'failed' | 'cancelled';
+}

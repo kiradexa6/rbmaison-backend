@@ -22,6 +22,7 @@ import {
   AddWalletAddressDto,
   AdjustMerchantWalletDto,
   AdminDepositSearchQueryDto,
+  AdminWalletTransactionSearchQueryDto,
   AdminWithdrawalSearchQueryDto,
   UpdateWalletAddressDto,
 } from './dto/wallet.dto';
@@ -78,6 +79,14 @@ export class AdminWalletsController {
     return this.adminWalletsService.searchDeposits(user, query);
   }
 
+  @Get('deposits/:id')
+  getDeposit(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.adminWalletsService.getDeposit(user, id);
+  }
+
   @Post('deposits/:id/approve')
   @Throttle(THROTTLE_FINANCIAL)
   approveDeposit(
@@ -102,6 +111,22 @@ export class AdminWalletsController {
     @Query() query: AdminWithdrawalSearchQueryDto,
   ) {
     return this.adminWalletsService.searchWithdrawals(user, query);
+  }
+
+  @Get('withdrawals/:id')
+  getWithdrawal(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.adminWalletsService.getWithdrawal(user, id);
+  }
+
+  @Get('transactions')
+  searchTransactions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: AdminWalletTransactionSearchQueryDto,
+  ) {
+    return this.adminWalletsService.searchTransactions(user, query);
   }
 
   @Post('withdrawals/:id/approve')

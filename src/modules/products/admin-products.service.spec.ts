@@ -184,6 +184,24 @@ describe('AdminProductsService', () => {
       }),
     );
   });
+
+  it('returns product detail with nested relations', async () => {
+    const product = {
+      id: createdId(),
+      name: 'Maison Tote',
+      images: [],
+      variants: [],
+    };
+    const client = mockClient({ data: product, error: null });
+    const service = new AdminProductsService({
+      isConfigured: () => true,
+      asUser: jest.fn().mockReturnValue(client),
+    } as never);
+
+    const result = await service.getProduct(admin, product.id);
+    expect(result.name).toBe('Maison Tote');
+    expect(client.from).toHaveBeenCalledWith('products');
+  });
 });
 
 function createdId() {
