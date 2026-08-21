@@ -26,7 +26,8 @@
     "db:stop": "npx supabase stop",
     "db:reset": "npx supabase db reset",
     "db:push": "npx supabase db push",
-    "db:diff": "npx supabase db diff"
+    "db:diff": "npx supabase db diff",
+    "verify:production-db": "ts-node scripts/verify-production-alignment.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

@@ -40,13 +40,23 @@ describe('SupabaseHealthIndicator', () => {
     });
     const { health, up } = indicator({
       isConfigured: () => true,
+      getPublicUrl: () => 'https://sbcyoaswsjfhhkypdniu.supabase.co',
       getAdminClient: () => ({ from }) as never,
     });
 
     const result = await health.isHealthy('supabase');
 
     expect(from).toHaveBeenCalledWith('profiles');
-    expect(up).toHaveBeenCalledWith({ configured: true });
-    expect(result).toEqual({ supabase: { status: 'up', configured: true } });
+    expect(up).toHaveBeenCalledWith({
+      configured: true,
+      projectRef: 'sbcyoaswsjfhhkypdniu',
+    });
+    expect(result).toEqual({
+      supabase: {
+        status: 'up',
+        configured: true,
+        projectRef: 'sbcyoaswsjfhhkypdniu',
+      },
+    });
   });
 });

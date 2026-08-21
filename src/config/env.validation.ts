@@ -9,6 +9,10 @@ import {
   Min,
   validateSync,
 } from 'class-validator';
+import {
+  assertProductionSupabaseTarget,
+  isLocalSupabaseUrl,
+} from '../infrastructure/supabase/supabase-project.util';
 
 enum Environment {
   Development = 'development',
@@ -73,6 +77,11 @@ class EnvironmentVariables {
   @IsOptional()
   SUPABASE_JWT_SECRET?: string;
 
+  /** Hosted Supabase project ref — production guardrail against wrong database. */
+  @IsString()
+  @IsOptional()
+  SUPABASE_PROJECT_REF?: string;
+
   @Type(() => Number)
   @IsNumber()
   @Min(1)
@@ -126,6 +135,7 @@ const TRIMMED_ENV_KEYS = [
   'SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
   'SUPABASE_JWT_SECRET',
+  'SUPABASE_PROJECT_REF',
 ] as const;
 
 export function readEnvString(
@@ -190,6 +200,17 @@ export function validate(config: Record<string, unknown>) {
         'CORS_ORIGIN must be an explicit production origin (wildcard * is not allowed)',
       );
     }
+
+    if (isLocalSupabaseUrl(validatedConfig.SUPABASE_URL)) {
+      throw new Error(
+        'Production cannot use a local Supabase URL. Set SUPABASE_URL to the hosted RB Maison project.',
+      );
+    }
+
+    assertProductionSupabaseTarget(
+      validatedConfig.SUPABASE_URL,
+      validatedConfig.SUPABASE_PROJECT_REF,
+    );
   }
 
   return validatedConfig;

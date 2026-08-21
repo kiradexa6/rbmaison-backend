@@ -81,6 +81,33 @@ describe('Environment Validation', () => {
     expect(result.SUPABASE_JWT_SECRET).toBe('jwt-secret');
   });
 
+  it('should reject local Supabase URLs in production', () => {
+    expect(() =>
+      validate({
+        NODE_ENV: 'production',
+        SUPABASE_URL: 'http://127.0.0.1:54321',
+        SUPABASE_ANON_KEY: 'anon-key',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
+        SUPABASE_JWT_SECRET: 'jwt-secret',
+        CORS_ORIGIN: 'https://rbmaisons.com',
+      }),
+    ).toThrow(/local Supabase URL/);
+  });
+
+  it('should reject mismatched SUPABASE_PROJECT_REF in production', () => {
+    expect(() =>
+      validate({
+        NODE_ENV: 'production',
+        SUPABASE_URL: 'https://sbcyoaswsjfhhkypdniu.supabase.co',
+        SUPABASE_PROJECT_REF: 'wrong-project-ref',
+        SUPABASE_ANON_KEY: 'anon-key',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
+        SUPABASE_JWT_SECRET: 'jwt-secret',
+        CORS_ORIGIN: 'https://rbmaisons.com',
+      }),
+    ).toThrow(/does not match SUPABASE_PROJECT_REF/);
+  });
+
   it('trims trailing whitespace and newlines on exact production variable names', () => {
     const result = validate({
       NODE_ENV: 'production\n',

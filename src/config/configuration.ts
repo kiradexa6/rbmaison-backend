@@ -19,6 +19,7 @@ export default () => ({
     anonKey: readEnvString(process.env, 'SUPABASE_ANON_KEY'),
     serviceRoleKey: readEnvString(process.env, 'SUPABASE_SERVICE_ROLE_KEY'),
     jwtSecret: readEnvString(process.env, 'SUPABASE_JWT_SECRET'),
+    projectRef: readEnvString(process.env, 'SUPABASE_PROJECT_REF'),
   },
   historicalData: {
     maxDays: parseInt(process.env.HISTORICAL_MAX_DAYS ?? '180', 10),
