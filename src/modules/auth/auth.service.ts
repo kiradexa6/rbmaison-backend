@@ -5,7 +5,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../infrastructure/supabase/supabase.service';
-import { UserRole } from '../../infrastructure/supabase/types/database.types';
+import {
+  Database,
+  UserRole,
+} from '../../infrastructure/supabase/types/database.types';
 import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 import { LoginDto, RefreshTokenDto, SignupDto } from './dto/auth.dto';
 
@@ -23,10 +26,35 @@ export class AuthService {
     const { data, error } = await client.auth.signUp({
       email: dto.email,
       password: dto.password,
+      options: {
+        data: {
+          full_name: dto.fullName?.trim() || undefined,
+        },
+      },
     });
 
     if (error) {
       throw this.mapAuthError(error.message);
+    }
+
+    if (data.user && data.session?.access_token) {
+      const patch: Database['public']['Tables']['profiles']['Update'] = {};
+      if (dto.fullName?.trim()) {
+        patch.full_name = dto.fullName.trim();
+      }
+      if (dto.phone?.trim()) {
+        patch.phone = dto.phone.trim();
+      }
+      if (dto.country?.trim()) {
+        patch.country = dto.country.trim();
+      }
+      if (Object.keys(patch).length > 0) {
+        await this.supabaseService
+          .getAdminClient()
+          .from('profiles')
+          .update(patch)
+          .eq('user_id', data.user.id);
+      }
     }
 
     const profile = data.user

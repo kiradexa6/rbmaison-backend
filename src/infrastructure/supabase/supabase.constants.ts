@@ -3,4 +3,5 @@ export const STORAGE_BUCKETS = {
   AVATARS: 'avatars',
   STORE_LOGOS: 'store-logos',
   PRODUCT_IMAGES: 'product-images',
+  APPLICATION_DOCUMENTS: 'application-documents',
 } as const;

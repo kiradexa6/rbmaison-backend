@@ -145,14 +145,26 @@ describe('production readiness — merchant apply, approve, list', () => {
         error: null,
       }),
     };
-    const service = new StoreApplicationsService({
-      isConfigured: () => true,
-      asUser: jest.fn().mockReturnValue(client),
-    } as never);
+    const service = new StoreApplicationsService(
+      {
+        isConfigured: () => true,
+        asUser: jest.fn().mockReturnValue(client),
+      } as never,
+      { uploadApplicationDocument: jest.fn() } as never,
+    );
 
     const result = await service.create(customer, {
       storeName: 'Maison Atelier',
       country: 'FR',
+      phone: '+33123456789',
+      address: '10 Avenue Montaigne, Paris',
+      identityDocumentType: 'passport',
+      documents: [
+        {
+          kind: 'passport',
+          storagePath: `${customer.id}/passport.pdf`,
+        },
+      ],
     });
 
     expect(client.rpc).toHaveBeenCalledWith(

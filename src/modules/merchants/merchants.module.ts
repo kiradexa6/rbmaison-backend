@@ -6,9 +6,11 @@ import { AdminStoresController } from './admin-stores.controller';
 import { AdminStoresService } from './admin-stores.service';
 import { AdminUsersController } from './admin-users.controller';
 import { AdminUsersService } from './admin-users.service';
-import { MerchantStoreController } from './merchant-store.controller';
+import {
+  MerchantStoreController,
+  StoreApplicationsController,
+} from './store-applications.controller';
 import { MerchantStoreService } from './merchant-store.service';
-import { StoreApplicationsController } from './store-applications.controller';
 import { StoreApplicationsService } from './store-applications.service';
 
 @Module({

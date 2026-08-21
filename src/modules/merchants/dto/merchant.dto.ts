@@ -12,6 +12,7 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
 import type {
   ListingStatus,
@@ -94,6 +95,36 @@ export class AdminSearchUsersQueryDto {
   search?: string;
 }
 
+export class ApplicationDocumentDto {
+  @IsEnum([
+    'passport',
+    'national_id_front',
+    'national_id_back',
+    'store_logo',
+    'other',
+  ] as const)
+  kind!:
+    | 'passport'
+    | 'national_id_front'
+    | 'national_id_back'
+    | 'store_logo'
+    | 'other';
+
+  @IsString()
+  @MaxLength(500)
+  storagePath!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  publicUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  mimeType?: string;
+}
+
 export class SubmitMerchantApplicationDto {
   @IsString()
   @MinLength(2)
@@ -112,11 +143,56 @@ export class SubmitMerchantApplicationDto {
   country?: string;
 
   @IsOptional()
+  @IsString()
+  @MinLength(7)
+  @MaxLength(16)
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(5)
+  @MaxLength(500)
+  address?: string;
+
+  @IsEnum(['passport', 'national_id'] as const)
+  identityDocumentType!: 'passport' | 'national_id';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  logo?: string;
+
+  @IsArray()
+  @ArrayMaxSize(20)
+  @ValidateNested({ each: true })
+  @Type(() => ApplicationDocumentDto)
+  documents!: ApplicationDocumentDto[];
+
+  /** Legacy string-only document paths. Prefer structured `documents`. */
+  @IsOptional()
   @IsArray()
   @ArrayMaxSize(20)
   @IsString({ each: true })
   @MaxLength(500, { each: true })
-  documents?: string[];
+  documentPaths?: string[];
+}
+
+export class UpdateMerchantStoreDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  storeName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  logo?: string;
 }
 
 export class AdminSearchApplicationsQueryDto {

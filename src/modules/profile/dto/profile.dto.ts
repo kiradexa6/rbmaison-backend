@@ -1,20 +1,13 @@
 import {
-  IsEmail,
   IsOptional,
   IsString,
+  IsUrl,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
 
-export class SignupDto {
-  @IsEmail()
-  email!: string;
-
-  @IsString()
-  @MinLength(12)
-  password!: string;
-
+export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   @MinLength(2)
@@ -31,19 +24,9 @@ export class SignupDto {
   @MinLength(2)
   @MaxLength(56)
   country?: string;
-}
 
-export class LoginDto {
-  @IsEmail()
-  email!: string;
-
-  @IsString()
-  @MinLength(1)
-  password!: string;
-}
-
-export class RefreshTokenDto {
-  @IsString()
-  @MinLength(1)
-  refreshToken!: string;
+  @IsOptional()
+  @IsUrl({ require_protocol: true })
+  @MaxLength(500)
+  avatar?: string;
 }

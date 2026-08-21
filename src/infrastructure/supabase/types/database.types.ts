@@ -271,6 +271,10 @@ export interface Database {
           business_description: string | null;
           country: string;
           documents: Json;
+          phone: string | null;
+          address: string | null;
+          identity_document_type: string | null;
+          logo: string | null;
           status: MerchantApplicationStatus;
           submitted_at: string;
           reviewed_by: string | null;
@@ -1443,8 +1447,20 @@ export interface Database {
           p_business_description?: string;
           p_country?: string;
           p_documents?: Json;
+          p_phone?: string;
+          p_address?: string;
+          p_identity_document_type?: string;
+          p_logo?: string;
         };
         Returns: Database['public']['Tables']['merchant_applications']['Row'];
+      };
+      update_merchant_store: {
+        Args: {
+          p_store_name?: string;
+          p_description?: string;
+          p_logo?: string;
+        };
+        Returns: Database['public']['Tables']['stores']['Row'];
       };
       my_merchant_applications: {
         Args: Record<string, never>;

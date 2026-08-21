@@ -58,16 +58,28 @@ describe('merchant application and admin approval', () => {
       rpc: jest.fn().mockResolvedValue({ data: application, error: null }),
     };
     const asUser = jest.fn().mockReturnValue(client);
-    const service = new StoreApplicationsService({
-      isConfigured: () => true,
-      asUser,
-    } as never);
+    const service = new StoreApplicationsService(
+      {
+        isConfigured: () => true,
+        asUser,
+      } as never,
+      { uploadApplicationDocument: jest.fn() } as never,
+    );
 
     const result = await service.create(customer, {
       storeName: 'Maison Store',
       businessDescription: 'Luxury leather',
       country: 'France',
-      documents: ['https://cdn/docs/license.pdf'],
+      phone: '+33123456789',
+      address: '12 Rue de Rivoli, Paris',
+      identityDocumentType: 'passport',
+      documents: [
+        {
+          kind: 'passport',
+          storagePath: `${customer.id}/passport.pdf`,
+          mimeType: 'application/pdf',
+        },
+      ],
     });
 
     expect(asUser).toHaveBeenCalledWith(customer.accessToken);
@@ -75,7 +87,13 @@ describe('merchant application and admin approval', () => {
       p_store_name: 'Maison Store',
       p_business_description: 'Luxury leather',
       p_country: 'France',
-      p_documents: ['https://cdn/docs/license.pdf'],
+      p_phone: '+33123456789',
+      p_address: '12 Rue de Rivoli, Paris',
+      p_identity_document_type: 'passport',
+      p_logo: undefined,
+      p_documents: expect.arrayContaining([
+        expect.objectContaining({ kind: 'passport' }),
+      ]),
     });
     expect(result).toEqual(application);
   });

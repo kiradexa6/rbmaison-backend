@@ -16,6 +16,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { WalletsModule } from './modules/wallets/wallets.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ProfileModule } from './modules/profile/profile.module';
 import { HistoricalDataModule } from './modules/historical-data/historical-data.module';
 
 @Module({
@@ -33,6 +34,7 @@ import { HistoricalDataModule } from './modules/historical-data/historical-data.
     }),
     SupabaseModule,
     AuthModule,
+    ProfileModule,
     ProductsModule,
     MerchantsModule,
     OrdersModule,

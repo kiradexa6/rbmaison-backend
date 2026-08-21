@@ -54,6 +54,11 @@ describe('AuthService', () => {
     expect(anon.auth.signUp).toHaveBeenCalledWith({
       email: customer.email,
       password: 'correct-horse-battery-staple',
+      options: {
+        data: {
+          full_name: undefined,
+        },
+      },
     });
     expect(result.user).toEqual(
       expect.objectContaining({ id: customer.id, role: 'customer' }),
