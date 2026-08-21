@@ -64,7 +64,10 @@ const merchantId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 const depositId = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
 const withdrawalId = '12121212-1212-4121-8121-121212121212';
 
-function roleContext(role: AuthenticatedUser['role'] | undefined, required: string[]) {
+function roleContext(
+  role: AuthenticatedUser['role'] | undefined,
+  required: string[],
+) {
   const reflector = {
     getAllAndOverride: jest.fn().mockReturnValue(required),
   };
@@ -78,7 +81,13 @@ function roleContext(role: AuthenticatedUser['role'] | undefined, required: stri
         url: '/api/v1/protected',
         ip: '127.0.0.1',
         user: role
-          ? { id: 'user', email: 'u@test', role, status: 'active', accessToken: 't' }
+          ? {
+              id: 'user',
+              email: 'u@test',
+              role,
+              status: 'active',
+              accessToken: 't',
+            }
           : undefined,
       }),
     }),
@@ -89,8 +98,12 @@ function roleContext(role: AuthenticatedUser['role'] | undefined, required: stri
 describe('production readiness — authentication and roles', () => {
   it('blocks customers from merchant routes', () => {
     const { guard, context } = roleContext('customer', ['merchant']);
-    expect(() => guard.canActivate(context as never)).toThrow(ForbiddenException);
-    expect(() => guard.canActivate(context as never)).toThrow(/Permission denied/);
+    expect(() => guard.canActivate(context as never)).toThrow(
+      ForbiddenException,
+    );
+    expect(() => guard.canActivate(context as never)).toThrow(
+      /Permission denied/,
+    );
   });
 
   it('blocks customers and merchants from admin routes', () => {
@@ -228,9 +241,12 @@ describe('production readiness — order, wallet, and notification flow', () => 
       error: null,
     });
     await orders.goForShipping(merchant, orderId);
-    expect(ordersClient.rpc).toHaveBeenCalledWith('merchant_send_for_shipping', {
-      p_order_id: orderId,
-    });
+    expect(ordersClient.rpc).toHaveBeenCalledWith(
+      'merchant_send_for_shipping',
+      {
+        p_order_id: orderId,
+      },
+    );
 
     const adminClient = {
       rpc: jest.fn().mockResolvedValue({
@@ -392,7 +408,10 @@ describe('production readiness — order, wallet, and notification flow', () => 
 describe('production readiness — wallet protection and API hardening', () => {
   it('rejects client-side balance errors with the production message', () => {
     const error = mapSupabaseError(
-      { message: 'Insufficient balance. Please top up your account.', code: 'P0001' },
+      {
+        message: 'Insufficient balance. Please top up your account.',
+        code: 'P0001',
+      },
       'not found',
     );
     expect(error).toBeInstanceOf(BadRequestException);
@@ -404,7 +423,10 @@ describe('production readiness — wallet protection and API hardening', () => {
   it('rejects paid-without-ledger and price-edit attempts as invalid requests', () => {
     expect(
       mapSupabaseError(
-        { message: 'Order cannot be marked paid without a wholesale ledger payment' },
+        {
+          message:
+            'Order cannot be marked paid without a wholesale ledger payment',
+        },
         'not found',
       ),
     ).toBeInstanceOf(UnprocessableEntityException);

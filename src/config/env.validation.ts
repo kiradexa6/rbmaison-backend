@@ -140,7 +140,9 @@ export function readEnvString(
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function normalizeEnv(config: Record<string, unknown>): Record<string, unknown> {
+function normalizeEnv(
+  config: Record<string, unknown>,
+): Record<string, unknown> {
   const normalized: Record<string, unknown> = { ...config };
   for (const key of TRIMMED_ENV_KEYS) {
     if (typeof config[key] === 'string') {

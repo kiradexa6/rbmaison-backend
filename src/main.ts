@@ -38,6 +38,14 @@ async function bootstrap() {
     app.enableCors({
       origin: corsOrigin === '*' ? true : corsOrigin.split(','),
       credentials: true,
+      allowedHeaders: [
+        'Authorization',
+        'Content-Type',
+        'Accept',
+        'X-Requested-With',
+      ],
+      exposedHeaders: ['Authorization'],
+      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     });
   }
 

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { SupabaseService } from '../../../infrastructure/supabase/supabase.service';
-import { UserRole } from '../../../infrastructure/supabase/types/database.types';
+import { extractAccessToken } from '../auth-token.util';
 import { AuthenticatedUser } from '../interfaces/authenticated-user.interface';
 
 @Injectable()
@@ -22,14 +22,11 @@ export class SupabaseAuthGuard implements CanActivate {
       throw new ServiceUnavailableException('Supabase is not configured');
     }
 
-    const request = context.switchToHttp().getRequest<
-      Request & { user?: AuthenticatedUser }
-    >();
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { user?: AuthenticatedUser }>();
 
-    const header = request.headers.authorization;
-    const token = header?.startsWith('Bearer ')
-      ? header.slice('Bearer '.length).trim()
-      : undefined;
+    const token = extractAccessToken(request);
 
     if (!token) {
       this.logUnauthorized(request, 'missing token');
@@ -44,8 +41,9 @@ export class SupabaseAuthGuard implements CanActivate {
       this.logUnauthorized(request, 'invalid token');
       throw new UnauthorizedException('Unauthorized');
     }
-    const asUser = this.supabaseService.asUser(token);
-    const { data: profile, error: profileError } = await asUser
+
+    const { data: profile, error: profileError } = await this.supabaseService
+      .getAdminClient()
       .from('profiles')
       .select('role, status')
       .eq('user_id', data.user.id)
@@ -64,7 +62,7 @@ export class SupabaseAuthGuard implements CanActivate {
     request.user = {
       id: data.user.id,
       email: data.user.email ?? '',
-      role: profile.role as UserRole,
+      role: profile.role,
       status: profile.status,
       accessToken: token,
     };

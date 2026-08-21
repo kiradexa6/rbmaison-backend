@@ -83,7 +83,10 @@ describe('AdminMerchantsService', () => {
   it('disables and removes listings through admin RPCs', async () => {
     const client = {
       rpc: jest.fn().mockResolvedValue({
-        data: { id: '66666666-6666-4666-8666-666666666666', status: 'inactive' },
+        data: {
+          id: '66666666-6666-4666-8666-666666666666',
+          status: 'inactive',
+        },
         error: null,
       }),
     };

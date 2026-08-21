@@ -23,7 +23,10 @@ export default () => ({
   historicalData: {
     maxDays: parseInt(process.env.HISTORICAL_MAX_DAYS ?? '180', 10),
     maxDeposits: parseInt(process.env.HISTORICAL_MAX_DEPOSITS ?? '40', 10),
-    maxWithdrawals: parseInt(process.env.HISTORICAL_MAX_WITHDRAWALS ?? '20', 10),
+    maxWithdrawals: parseInt(
+      process.env.HISTORICAL_MAX_WITHDRAWALS ?? '20',
+      10,
+    ),
     maxOrders: parseInt(process.env.HISTORICAL_MAX_ORDERS ?? '60', 10),
     maxWalletTransactions: parseInt(
       process.env.HISTORICAL_MAX_WALLET_TRANSACTIONS ?? '200',

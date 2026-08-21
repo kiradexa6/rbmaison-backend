@@ -75,11 +75,7 @@ export class AdminMerchantsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: SetWholesaleAccessDto,
   ) {
-    return this.adminMerchantsService.setWholesaleAccess(
-      user,
-      id,
-      dto.enabled,
-    );
+    return this.adminMerchantsService.setWholesaleAccess(user, id, dto.enabled);
   }
 
   @Get('wholesale/listings')

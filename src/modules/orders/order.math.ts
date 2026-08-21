@@ -11,9 +11,16 @@ export const INSUFFICIENT_BALANCE_MESSAGE =
 
 export const ORDER_ALREADY_SETTLED_MESSAGE = 'Order already settled';
 
-export function lineSettlement(salesPrice: number, wholesalePrice: number, quantity: number) {
+export function lineSettlement(
+  salesPrice: number,
+  wholesalePrice: number,
+  quantity: number,
+) {
   const wholesaleReturn = lineAmount(wholesalePrice, quantity);
-  const profitRelease = lineAmount(unitProfit(salesPrice, wholesalePrice), quantity);
+  const profitRelease = lineAmount(
+    unitProfit(salesPrice, wholesalePrice),
+    quantity,
+  );
   return {
     wholesaleReturn,
     profitRelease,

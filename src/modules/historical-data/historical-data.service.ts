@@ -148,12 +148,18 @@ export class HistoricalDataService {
   ) {
     this.assertTarget(userId, dto.userId ?? userId);
     if (dto.confirm === false) {
-      throw new BadRequestException('Generation requires explicit confirmation');
+      throw new BadRequestException(
+        'Generation requires explicit confirmation',
+      );
     }
 
     const request = await this.normalizeRequest(user, userId, dto);
 
-    const existing = await this.findDuplicateRun(user, userId, request.categories);
+    const existing = await this.findDuplicateRun(
+      user,
+      userId,
+      request.categories,
+    );
     if (existing) {
       return { ...this.presentRun(existing), duplicate: true };
     }
@@ -230,12 +236,11 @@ export class HistoricalDataService {
     this.assertTarget(pathUserId, targetUserId);
 
     const overview = await this.overview(user, pathUserId);
-    const allowedCategories = overview.allowedCategories as string[];
+    const allowedCategories = overview.allowedCategories;
     const selectedTypes =
       dto.selectAll || (!dto.categories?.length && !dto.historyTypes?.length)
         ? defaultHistoryTypes(allowedCategories)
-        : (dto.historyTypes ??
-          categoriesToHistoryTypes(dto.categories ?? []));
+        : (dto.historyTypes ?? categoriesToHistoryTypes(dto.categories ?? []));
     const categories = this.uniqueCategories(
       dto.categories?.length
         ? dto.categories
@@ -252,9 +257,7 @@ export class HistoricalDataService {
       userId: targetUserId,
       categories,
       historyTypes: categoriesToHistoryTypes(categories),
-      activityLevel: (dto.activityLevel ??
-        dto.volume ??
-        'medium') as HistoricalActivityLevel,
+      activityLevel: dto.activityLevel ?? dto.volume ?? 'medium',
       rangePreset: 'last_180_days' as const,
       confirm: dto.confirm !== false,
       idempotencyKey:
@@ -299,11 +302,7 @@ export class HistoricalDataService {
       'admin_list_historical_runs',
       { p_user_id: userId },
     );
-    return (
-      (assertSupabase({ data, error }, 'Target account not found') as
-        | HistoricalRunRow[]
-        | null) ?? []
-    );
+    return assertSupabase({ data, error }, 'Target account not found') ?? [];
   }
 
   private async enrichCounts(user: AuthenticatedUser, row: HistoricalRunRow) {
@@ -420,8 +419,9 @@ export class HistoricalDataService {
       maxOrders:
         this.configService.get<number>('historicalData.maxOrders') ?? 60,
       maxWalletTransactions:
-        this.configService.get<number>('historicalData.maxWalletTransactions') ??
-        200,
+        this.configService.get<number>(
+          'historicalData.maxWalletTransactions',
+        ) ?? 200,
       maxTotalRows:
         this.configService.get<number>('historicalData.maxTotalRows') ?? 400,
     };
@@ -437,7 +437,7 @@ export class HistoricalDataService {
         typeof response === 'object' &&
         response &&
         'message' in response &&
-        typeof (response as { message: unknown }).message === 'string'
+        typeof response.message === 'string'
       ) {
         return (response as { message: string }).message;
       }

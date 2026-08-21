@@ -1,7 +1,10 @@
 import { AdminProductsService } from './admin-products.service';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 
-function mockClient(result: { data: unknown; error: null | { message: string; code?: string } }) {
+function mockClient(result: {
+  data: unknown;
+  error: null | { message: string; code?: string };
+}) {
   const builder = {
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
@@ -72,12 +75,17 @@ describe('AdminProductsService', () => {
       asUser: jest.fn().mockReturnValue(client),
     } as never);
 
-    await service.updateProduct(admin, createdId(), { name: 'Updated', price: 1500 });
+    await service.updateProduct(admin, createdId(), {
+      name: 'Updated',
+      price: 1500,
+    });
 
     expect(client.builder.update).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Updated', price: '1500.00' }),
     );
-    expect(client.builder.update.mock.calls[0][0]).not.toHaveProperty('merchant_id');
+    expect(client.builder.update.mock.calls[0][0]).not.toHaveProperty(
+      'merchant_id',
+    );
   });
 
   it('publishes through the admin RPC', async () => {

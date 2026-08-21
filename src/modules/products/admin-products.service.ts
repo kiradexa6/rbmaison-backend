@@ -8,9 +8,7 @@ import {
   SupabaseService,
   TypedSupabaseClient,
 } from '../../infrastructure/supabase/supabase.service';
-import {
-  Database,
-} from '../../infrastructure/supabase/types/database.types';
+import { Database } from '../../infrastructure/supabase/types/database.types';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import {
   AdjustInventoryDto,
@@ -94,9 +92,12 @@ export class AdminProductsService {
   }
 
   async archive(user: AuthenticatedUser, productId: string) {
-    const { data, error } = await this.asUser(user).rpc('admin_archive_product', {
-      p_product_id: productId,
-    });
+    const { data, error } = await this.asUser(user).rpc(
+      'admin_archive_product',
+      {
+        p_product_id: productId,
+      },
+    );
     return assertSupabase({ data, error }, 'Product not found');
   }
 
@@ -177,7 +178,11 @@ export class AdminProductsService {
     return row;
   }
 
-  async deleteImage(user: AuthenticatedUser, productId: string, imageId: string) {
+  async deleteImage(
+    user: AuthenticatedUser,
+    productId: string,
+    imageId: string,
+  ) {
     const { data, error } = await this.asUser(user)
       .from('product_images')
       .delete()
@@ -217,7 +222,8 @@ export class AdminProductsService {
     variantId: string,
     dto: UpdateVariantDto,
   ) {
-    const patch: Database['public']['Tables']['product_variants']['Update'] = {};
+    const patch: Database['public']['Tables']['product_variants']['Update'] =
+      {};
     if (dto.sku !== undefined) patch.sku = dto.sku.trim();
     if (dto.size !== undefined) patch.size = dto.size;
     if (dto.color !== undefined) patch.color = dto.color;
@@ -244,12 +250,15 @@ export class AdminProductsService {
     variantId: string,
     dto: AdjustInventoryDto,
   ) {
-    const { data, error } = await this.asUser(user).rpc('admin_adjust_inventory', {
-      p_variant_id: variantId,
-      p_type: dto.type,
-      p_quantity: dto.quantity,
-      p_reference: dto.reference ?? undefined,
-    });
+    const { data, error } = await this.asUser(user).rpc(
+      'admin_adjust_inventory',
+      {
+        p_variant_id: variantId,
+        p_type: dto.type,
+        p_quantity: dto.quantity,
+        p_reference: dto.reference ?? undefined,
+      },
+    );
     return assertSupabase({ data, error });
   }
 
@@ -280,7 +289,11 @@ export class AdminProductsService {
     return assertSupabase({ data, error });
   }
 
-  async updateBrand(user: AuthenticatedUser, brandId: string, dto: UpdateBrandDto) {
+  async updateBrand(
+    user: AuthenticatedUser,
+    brandId: string,
+    dto: UpdateBrandDto,
+  ) {
     const patch: Database['public']['Tables']['brands']['Update'] = {};
     if (dto.name !== undefined) patch.name = dto.name.trim();
     if (dto.slug !== undefined) patch.slug = slugify(dto.slug);
@@ -319,7 +332,8 @@ export class AdminProductsService {
     categoryId: string,
     dto: UpdateCategoryDto,
   ) {
-    const patch: Database['public']['Tables']['product_categories']['Update'] = {};
+    const patch: Database['public']['Tables']['product_categories']['Update'] =
+      {};
     if (dto.name !== undefined) patch.name = dto.name.trim();
     if (dto.slug !== undefined) patch.slug = slugify(dto.slug);
     if (dto.description !== undefined) patch.description = dto.description;

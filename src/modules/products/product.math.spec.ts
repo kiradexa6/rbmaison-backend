@@ -1,4 +1,9 @@
-import { wholesalePrice, availableQuantity, slugify, listingAction } from './product.math';
+import {
+  wholesalePrice,
+  availableQuantity,
+  slugify,
+  listingAction,
+} from './product.math';
 
 describe('product math', () => {
   it('calculates wholesale as 20% off sales price on the server', () => {

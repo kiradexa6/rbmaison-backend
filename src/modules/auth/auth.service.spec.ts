@@ -1,7 +1,4 @@
-import {
-  ConflictException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 
@@ -12,6 +9,21 @@ const customer: AuthenticatedUser = {
   status: 'active',
   accessToken: 'customer-token',
 };
+
+function profileClient(role: string, status = 'active') {
+  return {
+    from: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          maybeSingle: jest.fn().mockResolvedValue({
+            data: { role, status },
+            error: null,
+          }),
+        }),
+      }),
+    }),
+  };
+}
 
 describe('AuthService', () => {
   it('registers through the anon client, never the service role', async () => {
@@ -26,7 +38,7 @@ describe('AuthService', () => {
         }),
       },
     };
-    const getAdminClient = jest.fn();
+    const getAdminClient = jest.fn().mockReturnValue(profileClient('customer'));
     const service = new AuthService({
       isConfigured: () => true,
       getAnonClient: () => anon,
@@ -39,16 +51,17 @@ describe('AuthService', () => {
       password: 'correct-horse-battery-staple',
     });
 
-    expect(getAdminClient).not.toHaveBeenCalled();
     expect(anon.auth.signUp).toHaveBeenCalledWith({
       email: customer.email,
       password: 'correct-horse-battery-staple',
     });
-    expect(result.user).toEqual({ id: customer.id, email: customer.email });
+    expect(result.user).toEqual(
+      expect.objectContaining({ id: customer.id, role: 'customer' }),
+    );
     expect(result.session).toBeNull();
   });
 
-  it('logs in through the anon client and returns a session', async () => {
+  it('logs in through the anon client and returns role in the session payload', async () => {
     const anon = {
       auth: {
         signInWithPassword: jest.fn().mockResolvedValue({
@@ -64,7 +77,7 @@ describe('AuthService', () => {
         }),
       },
     };
-    const getAdminClient = jest.fn();
+    const getAdminClient = jest.fn().mockReturnValue(profileClient('admin'));
     const service = new AuthService({
       isConfigured: () => true,
       getAnonClient: () => anon,
@@ -77,9 +90,43 @@ describe('AuthService', () => {
       password: 'correct-horse-battery-staple',
     });
 
-    expect(getAdminClient).not.toHaveBeenCalled();
+    expect(getAdminClient).toHaveBeenCalled();
     expect(result.session.accessToken).toBe('access');
-    expect(result.user.email).toBe(customer.email);
+    expect(result.user).toEqual(
+      expect.objectContaining({ email: customer.email, role: 'admin' }),
+    );
+  });
+
+  it('refreshes sessions and returns a new access token with role', async () => {
+    const anon = {
+      auth: {
+        refreshSession: jest.fn().mockResolvedValue({
+          data: {
+            user: { id: customer.id, email: customer.email },
+            session: {
+              access_token: 'new-access',
+              refresh_token: 'new-refresh',
+              expires_at: 1_800_000_000,
+            },
+          },
+          error: null,
+        }),
+      },
+    };
+    const service = new AuthService({
+      isConfigured: () => true,
+      getAnonClient: () => anon,
+      getAdminClient: jest.fn().mockReturnValue(profileClient('admin')),
+      asUser: jest.fn(),
+    } as never);
+
+    const result = await service.refresh({ refreshToken: 'refresh' });
+
+    expect(anon.auth.refreshSession).toHaveBeenCalledWith({
+      refresh_token: 'refresh',
+    });
+    expect(result.session.accessToken).toBe('new-access');
+    expect(result.user.role).toBe('admin');
   });
 
   it('rejects invalid login credentials as unauthorized', async () => {
@@ -136,7 +183,9 @@ describe('AuthService', () => {
       asUser,
     } as never);
 
-    await expect(service.logout(customer)).resolves.toEqual({ loggedOut: true });
+    await expect(service.logout(customer)).resolves.toEqual({
+      loggedOut: true,
+    });
     expect(asUser).toHaveBeenCalledWith(customer.accessToken);
     expect(getAdminClient).not.toHaveBeenCalled();
   });

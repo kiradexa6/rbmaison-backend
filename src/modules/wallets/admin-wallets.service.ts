@@ -101,9 +101,12 @@ export class AdminWalletsService {
   }
 
   async rejectDeposit(user: AuthenticatedUser, id: string) {
-    const { data, error } = await this.client(user).rpc('admin_reject_deposit', {
-      p_request_id: id,
-    });
+    const { data, error } = await this.client(user).rpc(
+      'admin_reject_deposit',
+      {
+        p_request_id: id,
+      },
+    );
     return assertSupabase({ data, error }, 'Deposit request not found');
   }
 

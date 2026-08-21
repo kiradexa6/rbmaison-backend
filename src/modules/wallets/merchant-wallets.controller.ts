@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { THROTTLE_FINANCIAL } from '../../shared/common/constants/throttle.constants';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -24,7 +17,9 @@ import { MerchantWalletsService } from './merchant-wallets.service';
 @UseGuards(SupabaseAuthGuard, RolesGuard)
 @Roles('merchant')
 export class MerchantWalletsController {
-  constructor(private readonly merchantWalletsService: MerchantWalletsService) {}
+  constructor(
+    private readonly merchantWalletsService: MerchantWalletsService,
+  ) {}
 
   @Get()
   wallets(@CurrentUser() user: AuthenticatedUser) {

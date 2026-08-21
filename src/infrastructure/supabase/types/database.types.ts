@@ -12,10 +12,7 @@ export type VerificationStatus = 'pending' | 'approved' | 'rejected';
 export type MerchantStatus = 'active' | 'suspended' | 'blocked';
 export type StoreStatus = 'pending' | 'active' | 'suspended';
 export type MerchantApplicationStatus =
-  | 'pending'
-  | 'approved'
-  | 'rejected'
-  | 'suspended';
+  'pending' | 'approved' | 'rejected' | 'suspended';
 export type SupportedCurrency = 'USD' | 'BTC' | 'ETH' | 'USDT';
 export type WalletTransactionType =
   | 'deposit'
@@ -26,25 +23,15 @@ export type WalletTransactionType =
   | 'profit_release'
   | 'wholesale_return';
 export type WalletTransactionStatus =
-  | 'pending'
-  | 'completed'
-  | 'failed'
-  | 'cancelled';
+  'pending' | 'completed' | 'failed' | 'cancelled';
 export type WalletTransactionDirection = 'credit' | 'debit';
 export type CryptoAsset = 'BTC' | 'ETH' | 'USDT';
 export type WalletNetwork =
-  | 'bitcoin'
-  | 'ethereum'
-  | 'erc20'
-  | 'trc20'
-  | 'bep20';
+  'bitcoin' | 'ethereum' | 'erc20' | 'trc20' | 'bep20';
 export type WalletAddressStatus = 'active' | 'disabled';
 export type DepositRequestStatus = 'pending' | 'approved' | 'rejected';
 export type WithdrawalRequestStatus =
-  | 'pending'
-  | 'approved'
-  | 'rejected'
-  | 'completed';
+  'pending' | 'approved' | 'rejected' | 'completed';
 export type ProductStatus = 'draft' | 'active' | 'inactive' | 'archived';
 export type ProductGender = 'women' | 'men' | 'unisex';
 export type BrandStatus = 'active' | 'inactive';
@@ -55,11 +42,7 @@ export type InventoryTransactionType =
   | 'order_released'
   | 'adjustment';
 export type ListingStatus =
-  | 'pending'
-  | 'active'
-  | 'suspended'
-  | 'inactive'
-  | 'removed';
+  'pending' | 'active' | 'suspended' | 'inactive' | 'removed';
 export type OrderStatus =
   | 'pending'
   | 'awaiting_payment'
@@ -91,24 +74,12 @@ export type NotificationType =
   | 'admin_action';
 export type NotificationReadStatus = 'unread' | 'read';
 export type HistoricalRunStatus =
-  | 'preview'
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'reversed';
+  'preview' | 'running' | 'completed' | 'failed' | 'reversed';
 export type HistoricalActivityLevel = 'low' | 'medium' | 'high';
 export type HistoricalCategory =
-  | 'wallet'
-  | 'deposits'
-  | 'withdrawals'
-  | 'orders'
-  | 'viewers';
+  'wallet' | 'deposits' | 'withdrawals' | 'orders' | 'viewers';
 export type HistoricalRangePreset =
-  | 'last_7_days'
-  | 'last_30_days'
-  | 'last_90_days'
-  | 'last_180_days'
-  | 'custom';
+  'last_7_days' | 'last_30_days' | 'last_90_days' | 'last_180_days' | 'custom';
 
 type RowInsertUpdate<TRow, TInsert, TUpdate> = {
   Row: TRow;

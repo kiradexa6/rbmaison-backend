@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { AdminWalletsService } from './admin-wallets.service';
 import { MerchantWalletsService } from './merchant-wallets.service';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
@@ -141,7 +145,9 @@ describe('AdminWalletsService', () => {
         getRequest: () => ({ user: merchant }),
       }),
     };
-    expect(() => guard.canActivate(context as never)).toThrow(ForbiddenException);
+    expect(() => guard.canActivate(context as never)).toThrow(
+      ForbiddenException,
+    );
   });
 });
 

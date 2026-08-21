@@ -20,7 +20,12 @@ export type NotificationEventKey =
 
 export const NOTIFICATION_EVENTS: Record<
   NotificationEventKey,
-  { type: NotificationType; title: string; message: string; audience: 'user' | 'merchant' | 'admin' | 'merchant+admin' }
+  {
+    type: NotificationType;
+    title: string;
+    message: string;
+    audience: 'user' | 'merchant' | 'admin' | 'merchant+admin';
+  }
 > = {
   applicationSubmitted: {
     type: 'merchant_application',
@@ -32,8 +37,7 @@ export const NOTIFICATION_EVENTS: Record<
   applicationApproved: {
     type: 'merchant_approved',
     title: 'Store Approved',
-    message:
-      'Your store has been approved. Merchant access is now available.',
+    message: 'Your store has been approved. Merchant access is now available.',
     audience: 'user',
   },
   applicationRejected: {

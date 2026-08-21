@@ -123,9 +123,12 @@ export class AdminMerchantsService {
 
     assertSupabase({ data: store, error: storeError });
     assertSupabase({ data: owner, error: ownerError });
-    const listingRows = assertSupabase({ data: listings, error: listingsError }) ?? [];
-    const orderRows = assertSupabase({ data: orders, error: ordersError }) ?? [];
-    const walletRows = assertSupabase({ data: wallets, error: walletsError }) ?? [];
+    const listingRows =
+      assertSupabase({ data: listings, error: listingsError }) ?? [];
+    const orderRows =
+      assertSupabase({ data: orders, error: ordersError }) ?? [];
+    const walletRows =
+      assertSupabase({ data: wallets, error: walletsError }) ?? [];
 
     const walletIds = walletRows.map((wallet) => wallet.id);
     let transactions: unknown[] = [];

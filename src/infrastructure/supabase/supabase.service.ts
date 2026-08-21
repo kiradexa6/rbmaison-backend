@@ -14,7 +14,8 @@ export class SupabaseService {
   private adminClient: TypedSupabaseClient | null = null;
 
   constructor(private readonly configService: ConfigService) {
-    this.url = this.configService.get<string>('supabase.url')?.trim() || undefined;
+    this.url =
+      this.configService.get<string>('supabase.url')?.trim() || undefined;
     this.anonKey =
       this.configService.get<string>('supabase.anonKey')?.trim() || undefined;
     this.serviceRoleKey =

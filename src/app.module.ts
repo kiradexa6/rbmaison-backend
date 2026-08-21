@@ -23,7 +23,13 @@ import { HistoricalDataModule } from './modules/historical-data/historical-data.
     ConfigModule,
     LoggingModule,
     ThrottlerModule.forRoot({
-      throttlers: [{ name: 'default', ttl: THROTTLE_TTL_MS, limit: THROTTLE_DEFAULT_LIMIT }],
+      throttlers: [
+        {
+          name: 'default',
+          ttl: THROTTLE_TTL_MS,
+          limit: THROTTLE_DEFAULT_LIMIT,
+        },
+      ],
     }),
     SupabaseModule,
     AuthModule,

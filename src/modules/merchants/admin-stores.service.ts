@@ -44,7 +44,8 @@ export class AdminStoresService {
       client.rpc('store_shop_orders', { p_store_id: storeId }),
     ]);
 
-    const detailRows = assertSupabase({ data: details, error: detailsError }) ?? [];
+    const detailRows =
+      assertSupabase({ data: details, error: detailsError }) ?? [];
     const store = detailRows[0];
     if (!store) {
       throw new NotFoundException('Store not found');
@@ -103,10 +104,9 @@ export class AdminStoresService {
   }
 
   async products(user: AuthenticatedUser, storeId: string) {
-    const { data, error } = await this.client(user).rpc(
-      'store_shop_products',
-      { p_store_id: storeId },
-    );
+    const { data, error } = await this.client(user).rpc('store_shop_products', {
+      p_store_id: storeId,
+    });
     return assertSupabase({ data, error }, 'Store not found') ?? [];
   }
 

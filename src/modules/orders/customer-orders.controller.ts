@@ -25,10 +25,7 @@ export class CustomerOrdersController {
 
   @Post()
   @Throttle(THROTTLE_ORDERS)
-  create(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CreateOrderDto,
-  ) {
+  create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateOrderDto) {
     return this.ordersService.create(user, dto);
   }
 

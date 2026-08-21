@@ -42,6 +42,7 @@ export interface SmsNotificationInput {
 export interface NotificationChannel {
   readonly kind: 'in-app' | 'email' | 'sms';
   send(
-    input: InAppNotificationInput | EmailNotificationInput | SmsNotificationInput,
+    input:
+      InAppNotificationInput | EmailNotificationInput | SmsNotificationInput,
   ): Promise<void>;
 }

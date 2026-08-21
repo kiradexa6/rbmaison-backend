@@ -60,13 +60,17 @@ Authorization: Bearer <session.accessToken>
 
 | Controller | Method | Endpoint | Body | `data` |
 | --- | --- | --- | --- | --- |
-| `AuthController` `@Controller('auth')` | POST | `/auth/login` | `{ "email": string, "password": string }` | `{ user: { id, email }, session: { accessToken, refreshToken, expiresAt } }` |
+| `AuthController` `@Controller('auth')` | POST | `/auth/login` | `{ "email": string, "password": string }` | `{ user: { id, email, role, status }, session: { accessToken, refreshToken, expiresAt } }` |
+| same | POST | `/auth/refresh` | `{ "refreshToken": string }` | same shape as login |
+| same | GET | `/auth/session` | — (Bearer required) | `{ user: { id, email, role, status }, session: { accessToken } }` |
 | same | POST | `/auth/logout` | — (Bearer required) | `{ loggedOut: true }` |
 | `HealthController` | GET | `/health` | — | Terminus payload; check `details.supabase.configured === true` |
 
 Login throttle: 20 POSTs / 60s / IP (including successes). Production may still be 5 until redeploy.
 
-`user.role` is **not** returned by login. Admin UI must treat 403 on `/admin/*` as “not admin”.
+Use `POST /auth/refresh` with `data.session.refreshToken` when admin calls start returning 401 due to expiry. Confirm the current session with `GET /auth/session`.
+
+`user.role` is returned by login, refresh, and session. Admin UI should still treat 403 on `/admin/*` as “not admin”.
 
 ---
 
@@ -624,6 +628,18 @@ type StoreOrderRow = {
 
 ---
 
+## 4b. Shipment queue — `AdminShipmentQueueController` `@Controller('admin/shipment-queue')`
+
+Aggregates real orders awaiting admin fulfillment from existing order RPCs. No fabricated rows.
+
+| Method | Endpoint | `data` |
+| --- | --- | --- |
+| GET | `/admin/shipment-queue` | `{ customerOrders: OrderSearchRow[], merchantOrders: MerchantOrderGrouped[], summary: { customerOrderCount, merchantOrderCount, totalCount } }` |
+
+Customer orders are `shipping` or `shipped` (use `POST /admin/orders/:id/deliver`). Merchant orders are `shipping` or `shipped` (use `POST /admin/merchant-orders/:id/complete`).
+
+---
+
 ## 4. Customer orders — `AdminOrdersController` `@Controller('admin/orders')`
 
 | Method | Endpoint | Params / query / body | `data` |
@@ -768,6 +784,7 @@ Returns **the logged-in admin’s** inbox, not a platform-wide feed. No mark-rea
 | --- | --- | --- |
 | GET | `/admin/notifications` | `{ unread: NotificationRow[], read: NotificationRow[], realtime: { schema, table, filter, events } }` |
 | GET | `/admin/notifications/unread-count` | `{ count: number, realtime: { schema, table, filter, events } }` |
+| POST | `/admin/notifications` | `{ userId: uuid, type: NotificationType, title: string ≤200, message: string ≤2000, data?: object }` | `NotificationRow` |
 
 ---
 
@@ -823,9 +840,10 @@ Approve/reject **applications** use the application UUID on `/admin/merchants/:i
 
 ## Integration checklist for Lovable
 
-1. Login → store `data.session.accessToken`.
+1. Login → store `data.session.accessToken` and `data.session.refreshToken`.
 2. Send `Authorization: Bearer …` on every `/admin/*` call.
-3. Read `response.data`, not the raw array at the root.
+3. Refresh with `POST /auth/refresh` when tokens expire.
+4. Read `response.data`, not the raw array at the root.
 4. Use only the query keys in this document. Extra keys = 422.
 5. Map list rows by `merchant_id` / `store_id` / `order_id` / `user_id` / `request_id` — not always `id`.
 6. Amounts are usually strings. Merchant-order `wholesale_due` is a number.

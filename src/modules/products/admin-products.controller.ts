@@ -162,10 +162,7 @@ export class AdminProductsController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('variantId') variantId?: string,
   ) {
-    return this.adminProductsService.listInventoryTransactions(
-      user,
-      variantId,
-    );
+    return this.adminProductsService.listInventoryTransactions(user, variantId);
   }
 
   @Post('brands')

@@ -87,34 +87,39 @@ export class CatalogueService {
     }
 
     const productId = row.id;
-    const [{ data: images }, { data: variants }, { data: availability }, { data: brandRow }, { data: categoryRow }] =
-      await Promise.all([
-        client
-          .from('product_images')
-          .select('id, image_url, storage_path, position, is_primary, alt_text')
-          .eq('product_id', productId)
-          .order('is_primary', { ascending: false })
-          .order('position', { ascending: true }),
-        client
-          .from('product_variants')
-          .select('id, sku, size, color, price_override, is_active')
-          .eq('product_id', productId)
-          .eq('is_active', true),
-        client
-          .from('catalogue_availability')
-          .select('variant_id, in_stock')
-          .eq('product_id', productId),
-        client
-          .from('brands')
-          .select('id, name, slug, logo')
-          .eq('id', row.brand_id)
-          .maybeSingle(),
-        client
-          .from('product_categories')
-          .select('id, name, slug, parent_id')
-          .eq('id', row.category_id)
-          .maybeSingle(),
-      ]);
+    const [
+      { data: images },
+      { data: variants },
+      { data: availability },
+      { data: brandRow },
+      { data: categoryRow },
+    ] = await Promise.all([
+      client
+        .from('product_images')
+        .select('id, image_url, storage_path, position, is_primary, alt_text')
+        .eq('product_id', productId)
+        .order('is_primary', { ascending: false })
+        .order('position', { ascending: true }),
+      client
+        .from('product_variants')
+        .select('id, sku, size, color, price_override, is_active')
+        .eq('product_id', productId)
+        .eq('is_active', true),
+      client
+        .from('catalogue_availability')
+        .select('variant_id, in_stock')
+        .eq('product_id', productId),
+      client
+        .from('brands')
+        .select('id, name, slug, logo')
+        .eq('id', row.brand_id)
+        .maybeSingle(),
+      client
+        .from('product_categories')
+        .select('id, name, slug, parent_id')
+        .eq('id', row.category_id)
+        .maybeSingle(),
+    ]);
 
     const stockByVariant = new Map(
       (availability ?? []).map((item) => [item.variant_id, item.in_stock]),
@@ -162,7 +167,7 @@ export class CatalogueService {
       availability: [...stockByVariant.values()].some(Boolean),
     };
 
-    return this.stripHidden(publicProduct) as PublicProduct;
+    return this.stripHidden(publicProduct);
   }
 
   async listBrands() {

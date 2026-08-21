@@ -118,12 +118,14 @@ function completedRun(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function historicalClient(handlers: {
-  start?: unknown;
-  execute?: unknown;
-  runs?: unknown[];
-  preview?: unknown;
-} = {}) {
+function historicalClient(
+  handlers: {
+    start?: unknown;
+    execute?: unknown;
+    runs?: unknown[];
+    preview?: unknown;
+  } = {},
+) {
   return {
     rpc: jest.fn(async (name: string) => {
       if (name === 'admin_user_historical_overview') {
@@ -150,12 +152,11 @@ function historicalClient(handlers: {
       }
       if (name === 'admin_preview_historical_data') {
         return {
-          data:
-            handlers.preview ?? {
-              status: 'preview',
-              target: { userId: merchant.id, email: merchant.email },
-              estimated: { deposits: 15, orders: 16 },
-            },
+          data: handlers.preview ?? {
+            status: 'preview',
+            target: { userId: merchant.id, email: merchant.email },
+            estimated: { deposits: 15, orders: 16 },
+          },
           error: null,
         };
       }
@@ -256,7 +257,11 @@ describe('admin historical data generator', () => {
 
   it('generates history only for the selected existing account', async () => {
     const client = historicalClient();
-    const result = await serviceOf(client).generate(admin, merchant.id, generateDto);
+    const result = await serviceOf(client).generate(
+      admin,
+      merchant.id,
+      generateDto,
+    );
 
     expect(client.rpc).toHaveBeenCalledWith(
       'admin_start_historical_run',
@@ -276,7 +281,9 @@ describe('admin historical data generator', () => {
     expect(result.created.deposits).toBe(12);
     expect(result.created.profits).toBe(6);
     expect(result.created.payments).toBe(12);
-    expect(result.processed.find((item) => item.type === 'billing')?.processed).toBe(40);
+    expect(
+      result.processed.find((item) => item.type === 'billing')?.processed,
+    ).toBe(40);
   });
 
   it('accepts the Control Center generate payload without dates or categories', async () => {
@@ -311,7 +318,11 @@ describe('admin historical data generator', () => {
       start: { data: completedRun(), error: null },
     });
 
-    const result = await serviceOf(client).generate(admin, merchant.id, generateDto);
+    const result = await serviceOf(client).generate(
+      admin,
+      merchant.id,
+      generateDto,
+    );
 
     expect(client.rpc).toHaveBeenCalledWith(
       'admin_start_historical_run',
@@ -330,7 +341,11 @@ describe('admin historical data generator', () => {
       runs: [completedRun()],
     });
 
-    const result = await serviceOf(client).generate(admin, merchant.id, generateDto);
+    const result = await serviceOf(client).generate(
+      admin,
+      merchant.id,
+      generateDto,
+    );
 
     expect(client.rpc).not.toHaveBeenCalledWith(
       'admin_start_historical_run',
@@ -344,7 +359,10 @@ describe('admin historical data generator', () => {
     const client = historicalClient({
       execute: {
         data: null,
-        error: { message: 'Wallet accounting is inconsistent after historical generation' },
+        error: {
+          message:
+            'Wallet accounting is inconsistent after historical generation',
+        },
       },
     });
 
@@ -389,7 +407,10 @@ describe('admin historical data generator', () => {
   it('rejects duplicate in-flight generation', () => {
     expect(
       mapSupabaseError(
-        { message: 'A historical generation is already running for this account' },
+        {
+          message:
+            'A historical generation is already running for this account',
+        },
         'not found',
       ),
     ).toBeInstanceOf(ConflictException);
@@ -433,7 +454,10 @@ describe('admin historical data generator', () => {
   it('reverses a completed run through the admin RPC', async () => {
     const client = {
       rpc: jest.fn().mockResolvedValue({
-        data: completedRun({ status: 'reversed', reversed_at: '2026-08-19T11:00:00.000Z' }),
+        data: completedRun({
+          status: 'reversed',
+          reversed_at: '2026-08-19T11:00:00.000Z',
+        }),
         error: null,
       }),
     };
@@ -476,7 +500,9 @@ describe('admin historical data generator', () => {
   });
 
   it('maps Control Center history types onto existing record categories', () => {
-    expect(historyTypesToCategories(['profits', 'payments'])).toEqual(['orders']);
+    expect(historyTypesToCategories(['profits', 'payments'])).toEqual([
+      'orders',
+    ]);
     expect(historyTypesToCategories(['billing'])).toEqual(
       expect.arrayContaining(['wallet', 'deposits', 'withdrawals', 'orders']),
     );
@@ -500,7 +526,11 @@ describe('admin store viewer adjustments', () => {
   it('sets the displayed store viewer count through the admin RPC', async () => {
     const client = {
       rpc: jest.fn().mockResolvedValue({
-        data: { store_id: storeId, viewer_count: 1280, reason: 'Campaign display' },
+        data: {
+          store_id: storeId,
+          viewer_count: 1280,
+          reason: 'Campaign display',
+        },
         error: null,
       }),
     };

@@ -1,4 +1,9 @@
-import { unitProfit, lineAmount, INSUFFICIENT_BALANCE_MESSAGE, lineSettlement } from './order.math';
+import {
+  unitProfit,
+  lineAmount,
+  INSUFFICIENT_BALANCE_MESSAGE,
+  lineSettlement,
+} from './order.math';
 
 describe('order math', () => {
   it('calculates wholesale amount as wholesale × quantity', () => {

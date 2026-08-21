@@ -127,7 +127,11 @@ describe('merchant application and admin approval', () => {
     };
     const service = serviceOf(AdminMerchantsService, client);
 
-    const result = await service.reject(admin, applicationId, 'Incomplete documents');
+    const result = await service.reject(
+      admin,
+      applicationId,
+      'Incomplete documents',
+    );
 
     expect(client.rpc).toHaveBeenCalledWith(
       'admin_reject_merchant_application',
@@ -141,7 +145,9 @@ describe('merchant application and admin approval', () => {
 describe('admin store search and shop control', () => {
   it('searches stores by Store ID, Merchant ID, name, and email', async () => {
     const client = {
-      rpc: jest.fn().mockResolvedValue({ data: [{ store_id: storeId }], error: null }),
+      rpc: jest
+        .fn()
+        .mockResolvedValue({ data: [{ store_id: storeId }], error: null }),
     };
     const service = serviceOf(AdminStoresService, client);
 
@@ -309,7 +315,9 @@ describe('merchant isolation', () => {
 
     expect(asUser).toHaveBeenCalledWith(merchant.accessToken);
     expect(client.rpc).toHaveBeenCalledWith('shop_details');
-    expect(client.rpc.mock.calls.find((call) => call[0] === 'shop_details')?.[1]).toBeUndefined();
+    expect(
+      client.rpc.mock.calls.find((call) => call[0] === 'shop_details')?.[1],
+    ).toBeUndefined();
     expect(result.store_id).toBe(storeId);
   });
 
@@ -326,7 +334,9 @@ describe('merchant isolation', () => {
       }),
     };
 
-    expect(() => guard.canActivate(context as never)).toThrow(ForbiddenException);
+    expect(() => guard.canActivate(context as never)).toThrow(
+      ForbiddenException,
+    );
   });
 
   it('blocks customers from merchant shop details until the merchant role is assigned', () => {
@@ -342,7 +352,9 @@ describe('merchant isolation', () => {
       }),
     };
 
-    expect(() => guard.canActivate(context as never)).toThrow(ForbiddenException);
+    expect(() => guard.canActivate(context as never)).toThrow(
+      ForbiddenException,
+    );
   });
 });
 

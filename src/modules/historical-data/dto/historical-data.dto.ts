@@ -64,7 +64,9 @@ export class PreviewHistoricalDataDto {
   historyTypes?: string[];
 
   @IsOptional()
-  @Transform(({ value }: { value: unknown }) => value === true || value === 'true')
+  @Transform(
+    ({ value }: { value: unknown }) => value === true || value === 'true',
+  )
   @IsBoolean()
   selectAll?: boolean;
 
@@ -104,7 +106,12 @@ export class GenerateHistoricalDataDto extends PreviewHistoricalDataDto {
     if (value === false || value === 'false') {
       return false;
     }
-    if (value === true || value === 'true' || value === undefined || value === null) {
+    if (
+      value === true ||
+      value === 'true' ||
+      value === undefined ||
+      value === null
+    ) {
       return true;
     }
     return value;

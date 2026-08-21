@@ -60,7 +60,11 @@ describe('AllExceptionsFilter', () => {
 
     filter.catch(
       new HttpException(
-        { statusCode: 422, message: 'email must be an email', error: 'Unprocessable Entity' },
+        {
+          statusCode: 422,
+          message: 'email must be an email',
+          error: 'Unprocessable Entity',
+        },
         HttpStatus.UNPROCESSABLE_ENTITY,
       ),
       mockHost,

@@ -1,10 +1,7 @@
 import { ForbiddenException } from '@nestjs/common';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
-import {
-  ADMIN_EVENT_TITLES,
-  NOTIFICATION_EVENTS,
-} from './notification.events';
+import { ADMIN_EVENT_TITLES, NOTIFICATION_EVENTS } from './notification.events';
 import { NotificationService } from './notifications.service';
 
 const admin: AuthenticatedUser = {
@@ -172,7 +169,9 @@ describe('NotificationService', () => {
 
   it('persists payment-required after a failed wholesale debit', async () => {
     const adminClient = {
-      rpc: jest.fn().mockResolvedValue({ data: notificationRow(), error: null }),
+      rpc: jest
+        .fn()
+        .mockResolvedValue({ data: notificationRow(), error: null }),
     };
     const service = serviceWithClient({ rpc: jest.fn() }, adminClient);
 
@@ -321,5 +320,57 @@ describe('NotificationService', () => {
     expect(() => guard.canActivate(context as never)).toThrow(
       ForbiddenException,
     );
+  });
+
+  it('creates admin-sent notifications through the service role writer', async () => {
+    const adminClient = {
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: { user_id: merchant.id, status: 'active' },
+              error: null,
+            }),
+          }),
+        }),
+      }),
+      rpc: jest.fn().mockResolvedValue({
+        data: notificationRow({ type: 'admin_action' }),
+        error: null,
+      }),
+    };
+    const userClient = {
+      rpc: jest.fn().mockResolvedValue({ data: notificationId, error: null }),
+    };
+    const service = new NotificationService(
+      {
+        isConfigured: () => true,
+        asUser: jest.fn().mockReturnValue(userClient),
+        getAdminClient: jest.fn().mockReturnValue(adminClient),
+      } as never,
+      { send: jest.fn() } as never,
+      { send: jest.fn() } as never,
+      { send: jest.fn() } as never,
+    );
+
+    const result = await service.adminSend(admin, {
+      userId: merchant.id,
+      type: 'admin_action',
+      title: 'Manual notice',
+      message: 'Please review your store settings.',
+    });
+
+    expect(adminClient.rpc).toHaveBeenCalledWith(
+      'create_notification',
+      expect.objectContaining({
+        p_user_id: merchant.id,
+        p_type: 'admin_action',
+      }),
+    );
+    expect(userClient.rpc).toHaveBeenCalledWith(
+      'log_admin_action',
+      expect.objectContaining({ p_action: 'send_notification' }),
+    );
+    expect(result.type).toBe('admin_action');
   });
 });

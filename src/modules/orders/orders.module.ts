@@ -4,6 +4,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { AdminMerchantOrdersController } from './admin-merchant-orders.controller';
 import { AdminOrdersController } from './admin-orders.controller';
 import { AdminOrdersService } from './admin-orders.service';
+import { AdminShipmentQueueController } from './admin-shipment-queue.controller';
 import { CustomerOrdersController } from './customer-orders.controller';
 import { MerchantOrdersController } from './merchant-orders.controller';
 import { MerchantShopOrdersController } from './merchant-shop-orders.controller';
@@ -17,6 +18,7 @@ import { OrdersService } from './orders.service';
     MerchantOrdersController,
     AdminMerchantOrdersController,
     AdminOrdersController,
+    AdminShipmentQueueController,
   ],
   providers: [OrdersService, AdminOrdersService],
 })

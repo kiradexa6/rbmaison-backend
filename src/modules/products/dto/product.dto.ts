@@ -46,7 +46,9 @@ export class SearchCatalogueQueryDto {
   priceMax?: number;
 
   @IsOptional()
-  @Transform(({ value }: { value: unknown }) => value === true || value === 'true')
+  @Transform(
+    ({ value }: { value: unknown }) => value === true || value === 'true',
+  )
   @IsBoolean()
   availableOnly?: boolean;
 }

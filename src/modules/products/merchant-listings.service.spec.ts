@@ -127,7 +127,10 @@ describe('MerchantListingsService', () => {
 
     expect(
       mapSupabaseError(
-        { message: 'duplicate key value violates unique constraint', code: '23505' },
+        {
+          message: 'duplicate key value violates unique constraint',
+          code: '23505',
+        },
         'not found',
       ),
     ).toBeInstanceOf(ConflictException);

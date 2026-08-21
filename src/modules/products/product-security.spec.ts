@@ -6,7 +6,9 @@ import { PUBLIC_PRODUCT_HIDDEN_FIELDS } from './product.math';
 
 describe('product security', () => {
   it('strips wholesale, merchant, and internal inventory fields from public payloads', () => {
-    const service = Object.create(CatalogueService.prototype) as CatalogueService;
+    const service = Object.create(
+      CatalogueService.prototype,
+    ) as CatalogueService;
     const payload = {
       name: 'Tote',
       price: 1200,
@@ -32,7 +34,10 @@ describe('product security', () => {
   it('maps RLS denials to ForbiddenException', () => {
     expect(
       mapSupabaseError(
-        { message: 'new row violates row-level security policy', code: '42501' },
+        {
+          message: 'new row violates row-level security policy',
+          code: '42501',
+        },
         'not found',
       ),
     ).toBeInstanceOf(ForbiddenException);
@@ -51,7 +56,9 @@ describe('product security', () => {
       }),
     };
 
-    expect(() => guard.canActivate(context as never)).toThrow(ForbiddenException);
+    expect(() => guard.canActivate(context as never)).toThrow(
+      ForbiddenException,
+    );
   });
 
   it('allows admin role on admin routes', () => {

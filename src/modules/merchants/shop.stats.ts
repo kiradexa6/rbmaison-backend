@@ -18,13 +18,14 @@ export function utcDate(value: string | Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function listingProfit(salesPrice: number, wholesalePrice: number): number {
+export function listingProfit(
+  salesPrice: number,
+  wholesalePrice: number,
+): number {
   return Math.round((salesPrice - wholesalePrice) * 100) / 100;
 }
 
-export function shopProductStats(
-  listings: Array<{ status: string }>,
-): {
+export function shopProductStats(listings: Array<{ status: string }>): {
   total_products_listed: number;
   active_products: number;
   removed_products: number;
@@ -37,7 +38,11 @@ export function shopProductStats(
 }
 
 export function shopOrderStats(
-  orders: Array<{ status: string; created_at: string; total_amount: string | number }>,
+  orders: Array<{
+    status: string;
+    created_at: string;
+    total_amount: string | number;
+  }>,
   today: string,
 ): {
   total_orders: number;
@@ -68,8 +73,8 @@ export function shopOrderStats(
     total_orders: orders.length,
     todays_orders: orders.filter((order) => utcDate(order.created_at) === today)
       .length,
-    completed_orders: orders.filter((order) =>
-      order.status === 'delivered' || order.status === 'completed',
+    completed_orders: orders.filter(
+      (order) => order.status === 'delivered' || order.status === 'completed',
     ).length,
     pending_orders: orders.filter((order) =>
       (PENDING_ORDER_STATUSES as readonly string[]).includes(order.status),
@@ -91,7 +96,10 @@ export function shopProfitStats(
   let todays = 0;
 
   for (const item of items) {
-    if (item.order_status !== 'delivered' && item.order_status !== 'completed') {
+    if (
+      item.order_status !== 'delivered' &&
+      item.order_status !== 'completed'
+    ) {
       continue;
     }
     const profit = Number(item.merchant_profit);

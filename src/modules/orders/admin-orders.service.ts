@@ -140,6 +140,34 @@ export class AdminOrdersService {
     return assertSupabase({ data, error }) ?? [];
   }
 
+  async getShipmentQueue(user: AuthenticatedUser) {
+    const client = this.client(user);
+    const [shippingOrders, shippedOrders, merchantOrderRows] =
+      await Promise.all([
+        this.search(user, { status: 'shipping' }),
+        this.search(user, { status: 'shipped' }),
+        client.rpc('admin_merchant_orders', {}),
+      ]);
+
+    const merchantRows = (assertSupabase(merchantOrderRows) ??
+      []) as MerchantOrderRow[];
+    const merchantOrders = this.groupMerchantOrders(merchantRows).filter(
+      (order) => order.status === 'shipping' || order.status === 'shipped',
+    );
+
+    const customerOrders = [...shippingOrders, ...shippedOrders];
+
+    return {
+      customerOrders,
+      merchantOrders,
+      summary: {
+        customerOrderCount: customerOrders.length,
+        merchantOrderCount: merchantOrders.length,
+        totalCount: customerOrders.length + merchantOrders.length,
+      },
+    };
+  }
+
   private groupMerchantOrders(rows: MerchantOrderRow[]) {
     const grouped = new Map<
       string,

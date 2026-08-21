@@ -17,7 +17,12 @@ describe('Catalogue (e2e)', () => {
   it('rejects unauthenticated admin product creation', () => {
     return request(app.getHttpServer())
       .post('/api/v1/admin/products')
-      .send({ name: 'Tote', brandId: '11111111-1111-4111-8111-111111111111', categoryId: '11111111-1111-4111-8111-111111111111', price: 10 })
+      .send({
+        name: 'Tote',
+        brandId: '11111111-1111-4111-8111-111111111111',
+        categoryId: '11111111-1111-4111-8111-111111111111',
+        price: 10,
+      })
       .expect((res) => {
         expect([401, 503]).toContain(res.status);
       });

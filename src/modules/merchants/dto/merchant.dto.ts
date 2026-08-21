@@ -57,7 +57,9 @@ export class AdminSearchListingsQueryDto {
 }
 
 export class SetWholesaleAccessDto {
-  @Transform(({ value }: { value: unknown }) => value === true || value === 'true')
+  @Transform(
+    ({ value }: { value: unknown }) => value === true || value === 'true',
+  )
   @IsBoolean()
   enabled!: boolean;
 }

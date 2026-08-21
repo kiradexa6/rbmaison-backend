@@ -1,4 +1,10 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { SupabaseService } from '../../infrastructure/supabase/supabase.service';
 import type { Json } from '../../infrastructure/supabase/types/database.types';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
@@ -73,10 +79,9 @@ export class NotificationService {
   }
 
   async notifyPaymentRequired(orderId: string): Promise<void> {
-    const { error } = await this.admin().rpc(
-      'notify_order_payment_required',
-      { p_order_id: orderId },
-    );
+    const { error } = await this.admin().rpc('notify_order_payment_required', {
+      p_order_id: orderId,
+    });
     if (error) {
       this.logger.warn(
         `Failed to persist payment-required notification for order ${orderId}: ${error.message}`,
@@ -117,6 +122,44 @@ export class NotificationService {
       'mark_all_notifications_read',
     );
     return { updated: Number(assertSupabase({ data, error }) ?? 0) };
+  }
+
+  async adminSend(user: AuthenticatedUser, input: InAppNotificationInput) {
+    const { data: targetProfile, error: targetError } = await this.admin()
+      .from('profiles')
+      .select('user_id, status')
+      .eq('user_id', input.userId)
+      .maybeSingle();
+
+    if (targetError || !targetProfile) {
+      throw new NotFoundException('Notification recipient not found');
+    }
+
+    if (targetProfile.status !== 'active') {
+      throw new UnprocessableEntityException(
+        'Notification recipient is not active',
+      );
+    }
+
+    const notification = await this.sendInApp(input);
+
+    const { error: logError } = await this.client(user).rpc(
+      'log_admin_action',
+      {
+        p_action: 'send_notification',
+        p_target_type: 'notifications',
+        p_target_id: notification.id,
+        p_description: `Sent ${input.type} notification to ${input.userId}`,
+      },
+    );
+
+    if (logError) {
+      this.logger.warn(
+        `Notification ${notification.id} sent but admin activity log failed: ${logError.message}`,
+      );
+    }
+
+    return notification;
   }
 
   private client(user: AuthenticatedUser) {

@@ -206,10 +206,7 @@ export class OrdersService {
         Number(row.wholesale_price),
         row.quantity,
       );
-      order.wholesale_due = lineAmount(
-        order.wholesale_due + amountRequired,
-        1,
-      );
+      order.wholesale_due = lineAmount(order.wholesale_due + amountRequired, 1);
       order.items.push({
         item_id: row.item_id,
         listing_id: row.listing_id,

@@ -12,9 +12,7 @@ export class InAppNotificationChannel implements NotificationChannel {
   private readonly logger = new Logger(InAppNotificationChannel.name);
 
   async send(input: InAppNotificationInput): Promise<void> {
-    this.logger.debug(
-      `in-app queued type=${input.type} user=${input.userId}`,
-    );
+    this.logger.debug(`in-app queued type=${input.type} user=${input.userId}`);
   }
 }
 
@@ -36,8 +34,6 @@ export class SmsNotificationChannel implements NotificationChannel {
   private readonly logger = new Logger(SmsNotificationChannel.name);
 
   async send(input: SmsNotificationInput): Promise<void> {
-    this.logger.debug(
-      `sms channel not configured; skipped to=${input.to}`,
-    );
+    this.logger.debug(`sms channel not configured; skipped to=${input.to}`);
   }
 }

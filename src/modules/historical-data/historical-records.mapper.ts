@@ -109,7 +109,9 @@ export function availableHistoryTypes(allowedCategories: readonly string[]) {
     return {
       id,
       label: historyTypeLabel(id),
-      available: mapped.every((category) => allowedCategories.includes(category)),
+      available: mapped.every((category) =>
+        allowedCategories.includes(category),
+      ),
     };
   });
 }
