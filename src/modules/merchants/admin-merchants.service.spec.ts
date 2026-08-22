@@ -52,7 +52,69 @@ describe('AdminMerchantsService', () => {
       p_store_id: storeId,
       p_query: undefined,
     });
-    expect(result).toEqual([profile]);
+    expect(client.rpc).toHaveBeenCalledTimes(1);
+    expect(result).toEqual([
+      {
+        ...profile,
+        id: merchantId,
+        record_type: 'merchant',
+      },
+    ]);
+  });
+
+  it('includes pending applications in merchant search for Control Center', async () => {
+    const application = {
+      application_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      user_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      applicant_name: 'New Seller',
+      applicant_email: 'seller@rbmaison.test',
+      store_name: 'Pending Store',
+      store_id: null,
+      merchant_id: null,
+      status: 'pending',
+      submitted_at: '2026-08-01T00:00:00.000Z',
+      country: 'FR',
+    };
+    const merchantRow = {
+      merchant_id: merchantId,
+      store_id: storeId,
+      store_name: 'Maison Store',
+      owner_name: 'Ada Merchant',
+      owner_email: 'merchant@rbmaison.test',
+      verification_status: 'approved',
+      account_status: 'active',
+      wholesale_enabled: true,
+    };
+    const client = {
+      rpc: jest
+        .fn()
+        .mockResolvedValueOnce({ data: [merchantRow], error: null })
+        .mockResolvedValueOnce({ data: [application], error: null }),
+    };
+    const service = new AdminMerchantsService({
+      isConfigured: () => true,
+      asUser: jest.fn().mockReturnValue(client),
+    } as never);
+
+    const result = await service.searchMerchants(admin, {});
+
+    expect(client.rpc).toHaveBeenNthCalledWith(1, 'admin_search_merchants', {
+      p_store_id: undefined,
+      p_query: undefined,
+    });
+    expect(client.rpc).toHaveBeenNthCalledWith(2, 'admin_search_applications', {
+      p_status: undefined,
+      p_query: undefined,
+    });
+    expect(result[0]).toMatchObject({
+      id: application.application_id,
+      record_type: 'application',
+      store_name: 'Pending Store',
+    });
+    expect(result[1]).toMatchObject({
+      id: merchantId,
+      record_type: 'merchant',
+    });
   });
 
   it('searches listings by Store ID, merchant, product, and status', async () => {

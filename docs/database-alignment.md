@@ -5,95 +5,82 @@
 ## One production system (target state)
 
 ```
-Lovable frontend  →  NestJS API  →  SAME hosted Supabase project
-                         ↑
-              same auth.users, profiles, orders, wallets, ledger
+Lovable frontend  →  NestJS API (Railway)  →  SAME hosted Supabase project
+         ↑                    ↑
+   elvypbekopexhcojpwki   same URL, anon key, JWT secret
 ```
+
+## Verified mismatch (2026-08-21)
+
+| Component | Supabase project | Evidence |
+| --- | --- | --- |
+| **Lovable frontend** | `elvypbekopexhcojpwki` | `VITE_SUPABASE_URL` in production bundle; live catalogue on rbmaisons.com |
+| **NestJS (Railway)** | `sbcyoaswsjfhhkypdniu` | `GET https://rbmaison-backend-production-f5dd.up.railway.app/api/v1/health` → `projectRef: sbcyoaswsjfhhkypdniu` |
+| **NestJS (local `.env` in repo)** | `sbcyoaswsjfhhkypdniu` | Same as Railway — **wrong project** |
+
+The empty Control Center (2 users, 0 products/orders) is caused by this split, not missing backend routes.
+
+## Live production Supabase project (Lovable)
+
+| Setting | Value |
+| --- | --- |
+| Project ref | `elvypbekopexhcojpwki` |
+| URL | `https://elvypbekopexhcojpwki.supabase.co` |
+
+The older ref `sbcyoaswsjfhhkypdniu` is a separate hosted project and must **not** be used for NestJS or Railway in production.
 
 ## What must NOT happen
 
 | Action | Risk |
 | --- | --- |
 | Point NestJS at local Supabase (`127.0.0.1:54321`) in production | Empty second database; live users invisible |
-| Use a different hosted Supabase project for NestJS | Duplicate user system, split orders/wallets |
+| Keep NestJS on `sbcyoaswsjfhhkypdniu` while Lovable uses `elvypbekopexhcojpwki` | Split users, empty admin panels, JWT validation failures |
 | Run `npx supabase db reset` on production | **Total data loss** |
 | Run `db push` without reviewing diff | May break live schema mid-flight |
 | Switch Lovable to NestJS auth before verification | Mass logout, broken sessions |
 | Create new signup flow on a fresh DB | Abandons existing accounts |
 
-## Live production Supabase project
+## Step 1 — Align NestJS + Railway environment
 
-The hosted project referenced in this repo:
-
-| Setting | Value |
-| --- | --- |
-| Project ref | `sbcyoaswsjfhhkypdniu` |
-| URL | `https://sbcyoaswsjfhhkypdniu.supabase.co` |
-
-**Confirm this matches** Supabase Dashboard → Project Settings → General → Reference ID for the project that currently serves `rbmaisons.com` / Lovable.
-
-Lovable and NestJS must both use:
-
-- **Same** `SUPABASE_URL`
-- **Same** `SUPABASE_ANON_KEY` (public; RLS still applies with user JWT)
-- **Same** `auth.users` table (existing logins keep working)
-
-NestJS server only (never in Lovable bundle):
-
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_JWT_SECRET`
-
-## Step 1 — Align NestJS environment (no code deploy to Lovable)
-
-Set on the **NestJS host only** (`.env`, Docker secrets, or platform env):
+Set on **Railway** and local `.env` (never commit secrets):
 
 ```env
 NODE_ENV=production
 CORS_ORIGIN=https://rbmaisons.com
 
-# MUST match Lovable / live frontend Supabase project exactly
-SUPABASE_URL=https://sbcyoaswsjfhhkypdniu.supabase.co
-SUPABASE_ANON_KEY=<same anon key as Lovable>
-SUPABASE_SERVICE_ROLE_KEY=<from dashboard — server only>
-SUPABASE_JWT_SECRET=<from dashboard — server only>
+# MUST match Lovable production Supabase project exactly
+SUPABASE_URL=https://elvypbekopexhcojpwki.supabase.co
+SUPABASE_ANON_KEY=<anon key from elvypbekopexhcojpwki dashboard>
+SUPABASE_SERVICE_ROLE_KEY=<service role from same project>
+SUPABASE_JWT_SECRET=<JWT secret from same project>
 
-# Guardrail — boot fails if URL points at a different project
-SUPABASE_PROJECT_REF=sbcyoaswsjfhhkypdniu
+# Guardrail — boot fails if URL ref mismatches
+SUPABASE_PROJECT_REF=elvypbekopexhcojpwki
 ```
 
-Copy anon key from the Lovable project settings or Supabase Dashboard → API.  
-If NestJS uses a **different** anon key from a **different** project, authentication and data will not match production.
+Copy keys from Supabase Dashboard → Project **elvypbekopexhcojpwki** → Settings → API.
+
+Redeploy Railway after updating variables.
 
 ## Step 2 — Verify read-only alignment
 
-Run from this repo (credentials via environment, never commit):
-
 ```powershell
-$env:SUPABASE_URL="https://sbcyoaswsjfhhkypdniu.supabase.co"
+$env:SUPABASE_URL="https://elvypbekopexhcojpwki.supabase.co"
 $env:SUPABASE_ANON_KEY="<anon>"
 $env:SUPABASE_SERVICE_ROLE_KEY="<service-role>"
 $env:SUPABASE_JWT_SECRET="<jwt-secret>"
-$env:SUPABASE_PROJECT_REF="sbcyoaswsjfhhkypdniu"
+$env:SUPABASE_PROJECT_REF="elvypbekopexhcojpwki"
 $env:VERIFY_USER_EMAIL="<existing production user>"
 $env:VERIFY_USER_PASSWORD="<password>"
 npm run verify:production-db
 ```
 
-The script:
-
-- Refuses local Supabase URLs
-- Confirms project ref matches `SUPABASE_PROJECT_REF`
-- Counts existing rows in `profiles`, `orders`, `wallets`, etc. (**read-only**)
-- Logs in an **existing** user and verifies profile, applications, merchant/wallet/orders access using the same JWT path NestJS uses
-
-**All checks must pass before any frontend auth switch.**
+Expect non-zero counts for `products`, `profiles`, etc. on the live maison.
 
 ## Step 3 — Verify NestJS health endpoint
 
-Start API with production env, then:
-
 ```http
-GET /api/v1/health
+GET https://rbmaison-backend-production-f5dd.up.railway.app/api/v1/health
 ```
 
 Expect:
@@ -101,67 +88,46 @@ Expect:
 ```json
 {
   "supabase": {
-    "status": "up",
     "configured": true,
-    "projectRef": "sbcyoaswsjfhhkypdniu"
+    "projectRef": "elvypbekopexhcojpwki"
   }
 }
 ```
 
-If `projectRef` is missing or wrong, NestJS is not on the live database.
+## Step 4 — Verify Control Center APIs
 
-## Step 4 — Verify NestJS auth for an existing user (manual)
-
-With API running against production Supabase:
-
-```http
-POST /api/v1/auth/login
-{ "email": "<existing user>", "password": "<password>" }
+```powershell
+$env:API_URL="https://rbmaison-backend-production-f5dd.up.railway.app"
+$env:VERIFY_ADMIN_EMAIL="<admin email>"
+$env:VERIFY_ADMIN_PASSWORD="<password>"
+npm run verify:control-center
 ```
 
-Then with returned `data.session.accessToken`:
+See `docs/control-center-pages.md` for the full page → endpoint map.
 
-| Check | Route |
-| --- | --- |
-| Profile | `GET /api/v1/profile` |
-| Store application | `GET /api/v1/store-applications/me` |
-| Merchant store | `GET /api/v1/merchant/store` |
-| Orders | `GET /api/v1/orders` or merchant order routes |
-| Wallet | `GET /api/v1/merchant/wallet` |
-| Ledger | `GET /api/v1/merchant/wallet/transactions` |
+## Step 5 — Historical E2E (manual)
 
-Compare counts/IDs with what the user sees in Lovable today. They must match.
+1. Admin → `/control-center/historical` → select real user → generate
+2. User login on rbmaisons.com → confirm wallet/order history shows new rows
 
 ## Schema migrations — proceed with caution
 
-Recent NestJS migrations (`20260821000026`, `20260821000027`) may **not** yet be applied on production.
-
-**Before** `db push`:
+Link to the **live** project before diff:
 
 ```bash
-npx supabase link --project-ref sbcyoaswsjfhhkypdniu
+npx supabase link --project-ref elvypbekopexhcojpwki
 npx supabase db diff --linked
 ```
 
 - Review every SQL change
 - Prefer additive migrations only
 - Never `db reset` production
-- Apply during a maintenance window if RPC signatures change
-
-If production schema differs, NestJS may need to run against existing Lovable tables **without** new migrations until diff is approved.
 
 ## Frontend migration gate (do not start until checklist complete)
 
-- [ ] NestJS `SUPABASE_URL` + anon key match Lovable project
+- [ ] Railway + NestJS `SUPABASE_URL` + keys match Lovable (`elvypbekopexhcojpwki`)
+- [ ] `/health` shows `projectRef: elvypbekopexhcojpwki`
 - [ ] `npm run verify:production-db` passes with real production user
-- [ ] `/health` shows correct `projectRef`
-- [ ] `POST /auth/login` works for existing user (no new signup)
+- [ ] `npm run verify:control-center` passes with admin credentials
 - [ ] Profile / orders / wallet data match Lovable for that user
 - [ ] Schema diff reviewed; migrations applied safely if needed
-- [ ] **Only then** plan Lovable switch from direct Supabase → NestJS API
-
-## What stays unchanged during alignment
-
-- Lovable continues direct Supabase Auth (users stay logged in)
-- Existing `auth.users`, profiles, orders, wallet ledger untouched
-- No second database, no user re-registration

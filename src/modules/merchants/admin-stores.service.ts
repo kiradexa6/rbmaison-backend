@@ -4,6 +4,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../infrastructure/supabase/supabase.service';
+import { assertAdminProfile } from '../auth/admin-access.util';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { assertSupabase } from '../products/supabase-error';
 import {
@@ -156,6 +157,8 @@ export class AdminStoresService {
     storeId: string,
     dto: SetStoreStatusDto,
   ) {
+    await assertAdminProfile(this.supabaseService, user);
+
     const { data, error } = await this.client(user).rpc(
       'admin_set_store_status',
       {
@@ -165,6 +168,13 @@ export class AdminStoresService {
       },
     );
     return assertSupabase({ data, error }, 'Store not found');
+  }
+
+  async unlock(user: AuthenticatedUser, storeId: string, reason?: string) {
+    return this.setStatus(user, storeId, {
+      status: 'active',
+      reason,
+    });
   }
 
   async setWholesaleAccess(

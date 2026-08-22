@@ -20,6 +20,7 @@ import {
   AdjustStoreViewersDto,
   AdminSearchStoresQueryDto,
   SetStoreStatusDto,
+  UnlockStoreDto,
   SetWholesaleAccessDto,
 } from './dto/merchant.dto';
 
@@ -86,6 +87,15 @@ export class AdminStoresController {
     @Body() dto: SetStoreStatusDto,
   ) {
     return this.adminStoresService.setStatus(user, id, dto);
+  }
+
+  @Post(':id/unlock')
+  unlock(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UnlockStoreDto,
+  ) {
+    return this.adminStoresService.unlock(user, id, dto.reason);
   }
 
   @Post(':id/wholesale-access')

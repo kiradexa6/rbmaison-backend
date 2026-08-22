@@ -9,6 +9,7 @@ import {
 import { Request } from 'express';
 import { SupabaseService } from '../../../infrastructure/supabase/supabase.service';
 import { extractAccessToken } from '../auth-token.util';
+import { normalizeUserRole } from '../role.util';
 import { AuthenticatedUser } from '../interfaces/authenticated-user.interface';
 
 @Injectable()
@@ -59,10 +60,16 @@ export class SupabaseAuthGuard implements CanActivate {
       throw new UnauthorizedException('Unauthorized');
     }
 
+    const role = normalizeUserRole(profile.role);
+    if (!role) {
+      this.logUnauthorized(request, 'invalid role');
+      throw new UnauthorizedException('Unauthorized');
+    }
+
     request.user = {
       id: data.user.id,
       email: data.user.email ?? '',
-      role: profile.role,
+      role,
       status: profile.status,
       accessToken: token,
     };

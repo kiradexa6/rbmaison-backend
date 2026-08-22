@@ -206,11 +206,25 @@ export class AdminSearchApplicationsQueryDto {
   q?: string;
 }
 
+export class ApproveApplicationDto {
+  /** Control Center sends `note`; accepted and ignored. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  note?: string;
+}
+
 export class RejectApplicationDto {
   @IsOptional()
   @IsString()
   @MaxLength(240)
   reason?: string;
+
+  /** Control Center alias for `reason`. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  note?: string;
 }
 
 export class AdminSearchStoresQueryDto {
@@ -274,6 +288,13 @@ export class SetStoreStatusDto {
   @IsEnum(['active', 'suspended'] as const)
   status!: Extract<StoreStatus, 'active' | 'suspended'>;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  reason?: string;
+}
+
+export class UnlockStoreDto {
   @IsOptional()
   @IsString()
   @MaxLength(240)

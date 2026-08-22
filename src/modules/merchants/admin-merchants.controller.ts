@@ -18,6 +18,7 @@ import {
   AdminSearchApplicationsQueryDto,
   AdminSearchListingsQueryDto,
   AdminSearchMerchantsQueryDto,
+  ApproveApplicationDto,
   RejectApplicationDto,
   SetWholesaleAccessDto,
 } from './dto/merchant.dto';
@@ -48,6 +49,7 @@ export class AdminMerchantsController {
   approve(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
+    @Body() _dto: ApproveApplicationDto,
   ) {
     return this.adminMerchantsService.approve(user, id);
   }
@@ -58,7 +60,11 @@ export class AdminMerchantsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: RejectApplicationDto,
   ) {
-    return this.adminMerchantsService.reject(user, id, dto.reason);
+    return this.adminMerchantsService.reject(
+      user,
+      id,
+      dto.reason ?? dto.note,
+    );
   }
 
   @Get('merchants/:id')

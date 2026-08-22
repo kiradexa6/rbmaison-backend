@@ -10,6 +10,7 @@ import {
   UserRole,
 } from '../../infrastructure/supabase/types/database.types';
 import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
+import { normalizeUserRole } from './role.util';
 import { LoginDto, RefreshTokenDto, SignupDto } from './dto/auth.dto';
 
 type AuthProfile = {
@@ -182,7 +183,7 @@ export class AuthService {
     }
 
     return {
-      role: data.role,
+      role: normalizeUserRole(data.role) ?? 'customer',
       status: data.status,
     };
   }

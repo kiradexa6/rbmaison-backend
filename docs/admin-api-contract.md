@@ -475,11 +475,11 @@ Call `/admin/merchants/applications` **before** treating `/admin/merchants/:id` 
 
 | Method | Endpoint | Params / query / body | `data` |
 | --- | --- | --- | --- |
-| GET | `/admin/merchants` | query optional: `storeId?` UUID, `q?` | `MerchantSearchRow[]` |
+| GET | `/admin/merchants` | query optional: `storeId?` UUID, `q?` | `MerchantSearchRow[]` plus pending **`ApplicationSearchRow`** entries (`record_type: "application"`, `id` = application UUID for approve/reject) |
 | GET | `/admin/merchants/applications` | query optional: `status?` pending\|approved\|rejected\|suspended, `q?` | `ApplicationSearchRow[]` |
 | GET | `/admin/merchants/:id` | path `id` = **merchant UUID** | see below |
-| POST | `/admin/merchants/:id/approve` | path `id` = **application UUID**, no body | `{ application_id, merchant_id, store_id, user_id, role, store_name, status }` |
-| POST | `/admin/merchants/:id/reject` | path `id` = **application UUID**; body `{ reason?: string ≤240 }` | `{ application_id, merchant_id, user_id, status }` |
+| POST | `/admin/merchants/:id/approve` | path `id` = **application UUID**, body optional `{ note? }` (ignored) | `{ application_id, merchant_id, store_id, user_id, role, store_name, status }` |
+| POST | `/admin/merchants/:id/reject` | path `id` = **application UUID**; body `{ reason?: string, note?: string }` (`note` alias) | `{ application_id, merchant_id, user_id, status }` |
 | POST | `/admin/merchants/:id/wholesale-access` | path `id` = **merchant UUID**; body `{ enabled: boolean }` required | `MerchantRow` |
 | GET | `/admin/wholesale/listings` | query optional: `storeId?`, `merchantId?`, `merchant?`, `product?`, `status?` pending\|active\|suspended\|inactive\|removed | `ListingSearchRow[]` |
 | POST | `/admin/wholesale/listings/:id/disable` | listing UUID | `ListingRow` (`status: "inactive"`) |
@@ -530,6 +530,7 @@ Call `/admin/merchants/applications` **before** treating `/admin/merchants/:id` 
 | POST | `/admin/stores/:id/balance-adjust` | `{ amount: number > 0, direction: "credit"\|"debit", reason: string 3–240, currency?: "USD"\|"BTC"\|"ETH"\|"USDT" }` default USD | `WalletTxRow` |
 | POST | `/admin/stores/:id/credit-adjust` | `{ score: 0–100, reason: string 3–240 }` | `CreditScoreRow` |
 | POST | `/admin/stores/:id/status` | `{ status: "active"\|"suspended", reason?: string }` | `StoreRow` |
+| POST | `/admin/stores/:id/unlock` | optional `{ reason?: string }` | `StoreRow` (`status: "active"`) |
 | POST | `/admin/stores/:id/wholesale-access` | `{ enabled: boolean }` | `MerchantRow` |
 | POST | `/admin/stores/:id/viewers` | `{ viewerCount: 0–1000000, reason: string 3–240 }` | `{ store_id, viewer_count, reason, updated_by, created_at, updated_at }` |
 

@@ -386,7 +386,7 @@ describe('admin historical data generator', () => {
       roleContext('merchant', ['admin']).guard.canActivate(
         roleContext('merchant', ['admin']).context as never,
       ),
-    ).toThrow(/Permission denied/);
+    ).toThrow(/Administrator access required/);
   });
 
   it('rejects ranges older than six months and future dates', () => {

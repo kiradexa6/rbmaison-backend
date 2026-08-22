@@ -70,7 +70,7 @@ describe('product security', () => {
       getHandler: () => ({}),
       getClass: () => ({}),
       switchToHttp: () => ({
-        getRequest: () => ({ user: { role: 'admin' } }),
+        getRequest: () => ({ user: { role: 'ADMIN' } }),
       }),
     };
 

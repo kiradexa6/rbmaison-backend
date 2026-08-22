@@ -83,14 +83,17 @@ export class SupabaseService {
       );
     }
 
-    if (!accessToken) {
+    const token = accessToken?.trim();
+    if (!token) {
       throw new Error('Access token is required for RLS-scoped queries');
     }
 
     return createClient<Database>(this.url, this.anonKey, {
+      accessToken: async () => token,
       global: {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
+          apikey: this.anonKey,
         },
       },
       auth: {

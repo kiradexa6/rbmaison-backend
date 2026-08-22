@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { UserRole } from '../../../infrastructure/supabase/types/database.types';
 import { ROLES_KEY } from '../decorators/roles.decorator';
+import { roleMatches } from '../role.util';
 import { AuthenticatedUser } from '../interfaces/authenticated-user.interface';
 
 @Injectable()
@@ -31,11 +32,14 @@ export class RolesGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request & { user?: AuthenticatedUser }>();
 
-    if (!request.user || !roles.includes(request.user.role)) {
+    if (!request.user || !roleMatches(request.user.role, roles)) {
       this.logger.warn(
         `Failed authorization attempt ${request.method} ${request.originalUrl ?? request.url} ip=${request.ip} role=${request.user?.role ?? 'anonymous'} required=${roles.join(',')}`,
       );
-      throw new ForbiddenException('Permission denied');
+      const message = roles.some((role) => role.toLowerCase() === 'admin')
+        ? 'Administrator access required.'
+        : 'Permission denied';
+      throw new ForbiddenException(message);
     }
 
     return true;

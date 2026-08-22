@@ -20,14 +20,79 @@ export class AdminMerchantsService {
     user: AuthenticatedUser,
     query: AdminSearchMerchantsQueryDto,
   ) {
-    const { data, error } = await this.client(user).rpc(
-      'admin_search_merchants',
+    const client = this.client(user);
+
+    const { data, error } = await client.rpc('admin_search_merchants', {
+      p_store_id: query.storeId ?? undefined,
+      p_query: query.q ?? undefined,
+    });
+    const merchants = assertSupabase({ data, error }) ?? [];
+
+    if (query.storeId) {
+      return merchants.map((row) => this.presentMerchant(row));
+    }
+
+    const { data: applications, error: applicationsError } = await client.rpc(
+      'admin_search_applications',
       {
-        p_store_id: query.storeId ?? undefined,
+        p_status: undefined,
         p_query: query.q ?? undefined,
       },
     );
-    return assertSupabase({ data, error }) ?? [];
+    const applicationRows =
+      assertSupabase({ data: applications, error: applicationsError }) ?? [];
+
+    const pendingApplications = applicationRows
+      .filter((row) => row.status === 'pending')
+      .map((row) => this.presentApplicationAsMerchant(row));
+
+    const approvedMerchants = merchants.map((row) =>
+      this.presentMerchant(row),
+    );
+
+    return [...pendingApplications, ...approvedMerchants];
+  }
+
+  private presentMerchant(row: {
+    merchant_id: string;
+    [key: string]: unknown;
+  }) {
+    return {
+      ...row,
+      id: row.merchant_id,
+      record_type: 'merchant' as const,
+    };
+  }
+
+  private presentApplicationAsMerchant(row: {
+    application_id: string;
+    user_id: string;
+    applicant_name: string | null;
+    applicant_email: string;
+    store_name: string;
+    store_id: string | null;
+    merchant_id: string | null;
+    status: string;
+    submitted_at: string;
+    country?: string;
+  }) {
+    return {
+      id: row.application_id,
+      application_id: row.application_id,
+      merchant_id: row.merchant_id,
+      store_id: row.store_id,
+      store_name: row.store_name,
+      owner_name: row.applicant_name,
+      owner_email: row.applicant_email,
+      owner_phone: null,
+      verification_status: row.status,
+      account_status: row.status === 'pending' ? 'pending' : row.status,
+      wholesale_enabled: false,
+      record_type: 'application' as const,
+      user_id: row.user_id,
+      country: row.country ?? null,
+      submitted_at: row.submitted_at,
+    };
   }
 
   async searchApplications(

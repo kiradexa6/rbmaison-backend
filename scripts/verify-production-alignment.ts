@@ -4,11 +4,11 @@
  *
  * Usage (from repo root, with production secrets in environment — never commit):
  *
- *   set SUPABASE_URL=https://sbcyoaswsjfhhkypdniu.supabase.co
+ *   set SUPABASE_URL=https://elvypbekopexhcojpwki.supabase.co
  *   set SUPABASE_ANON_KEY=<same anon key as Lovable>
  *   set SUPABASE_SERVICE_ROLE_KEY=<server only>
  *   set SUPABASE_JWT_SECRET=<jwt secret from dashboard>
- *   set SUPABASE_PROJECT_REF=sbcyoaswsjfhhkypdniu
+ *   set SUPABASE_PROJECT_REF=elvypbekopexhcojpwki
  *   set VERIFY_USER_EMAIL=<existing production user email>
  *   set VERIFY_USER_PASSWORD=<password>
  *   npm run verify:production-db
