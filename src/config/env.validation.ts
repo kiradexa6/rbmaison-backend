@@ -123,6 +123,14 @@ class EnvironmentVariables {
   @Max(400)
   @IsOptional()
   HISTORICAL_MAX_TOTAL_ROWS: number = 400;
+
+  @IsString()
+  @IsOptional()
+  STRIPE_SECRET_KEY?: string;
+
+  @IsString()
+  @IsOptional()
+  STRIPE_WEBHOOK_SECRET?: string;
 }
 
 const TRIMMED_ENV_KEYS = [
@@ -136,6 +144,8 @@ const TRIMMED_ENV_KEYS = [
   'SUPABASE_SERVICE_ROLE_KEY',
   'SUPABASE_JWT_SECRET',
   'SUPABASE_PROJECT_REF',
+  'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
 ] as const;
 
 export function readEnvString(

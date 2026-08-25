@@ -76,6 +76,12 @@ export type NotificationReadStatus = 'unread' | 'read';
 export type HistoricalRunStatus =
   'preview' | 'running' | 'completed' | 'failed' | 'reversed';
 export type HistoricalActivityLevel = 'low' | 'medium' | 'high';
+export type StripePaymentStatus =
+  | 'pending'
+  | 'processing'
+  | 'succeeded'
+  | 'failed'
+  | 'canceled';
 export type HistoricalCategory =
   'wallet' | 'deposits' | 'withdrawals' | 'orders' | 'viewers';
 export type HistoricalRangePreset =
@@ -820,6 +826,62 @@ export interface Database {
         {
           status?: OrderStatus;
           updated_at?: string;
+        }
+      >;
+      order_stripe_payments: RowInsertUpdate<
+        {
+          id: string;
+          order_id: string;
+          customer_id: string;
+          stripe_payment_intent_id: string | null;
+          stripe_checkout_session_id: string | null;
+          amount: string;
+          currency: SupportedCurrency;
+          status: StripePaymentStatus;
+          failure_code: string | null;
+          failure_message: string | null;
+          created_at: string;
+          updated_at: string;
+        },
+        {
+          id?: string;
+          order_id: string;
+          customer_id: string;
+          stripe_payment_intent_id?: string | null;
+          stripe_checkout_session_id?: string | null;
+          amount: string;
+          currency?: SupportedCurrency;
+          status?: StripePaymentStatus;
+          failure_code?: string | null;
+          failure_message?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        },
+        {
+          stripe_payment_intent_id?: string | null;
+          stripe_checkout_session_id?: string | null;
+          status?: StripePaymentStatus;
+          failure_code?: string | null;
+          failure_message?: string | null;
+          updated_at?: string;
+        }
+      >;
+      stripe_webhook_events: RowInsertUpdate<
+        {
+          id: string;
+          stripe_event_id: string;
+          event_type: string;
+          processed_at: string;
+        },
+        {
+          id?: string;
+          stripe_event_id: string;
+          event_type: string;
+          processed_at?: string;
+        },
+        {
+          event_type?: string;
+          processed_at?: string;
         }
       >;
       order_items: RowInsertUpdate<
@@ -1851,6 +1913,33 @@ export interface Database {
         Args: { p_user_id: string };
         Returns: Json;
       };
+      register_stripe_payment_attempt: {
+        Args: {
+          p_order_id: string;
+          p_customer_id: string;
+          p_stripe_payment_intent_id: string;
+          p_stripe_checkout_session_id?: string | null;
+          p_amount: number;
+          p_currency?: SupportedCurrency;
+        };
+        Returns: Database['public']['Tables']['order_stripe_payments']['Row'];
+      };
+      complete_stripe_order_payment: {
+        Args: {
+          p_stripe_payment_intent_id: string;
+          p_stripe_event_id?: string | null;
+        };
+        Returns: Database['public']['Tables']['order_stripe_payments']['Row'];
+      };
+      fail_stripe_order_payment: {
+        Args: {
+          p_stripe_payment_intent_id: string;
+          p_stripe_event_id?: string | null;
+          p_failure_code?: string | null;
+          p_failure_message?: string | null;
+        };
+        Returns: Database['public']['Tables']['order_stripe_payments']['Row'];
+      };
     };
     Enums: {
       user_role: UserRole;
@@ -1878,6 +1967,7 @@ export interface Database {
       notification_read_status: NotificationReadStatus;
       historical_run_status: HistoricalRunStatus;
       historical_activity_level: HistoricalActivityLevel;
+      stripe_payment_status: StripePaymentStatus;
     };
     CompositeTypes: Record<string, never>;
   };

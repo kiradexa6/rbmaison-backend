@@ -18,6 +18,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { AuthModule } from './modules/auth/auth.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { HistoricalDataModule } from './modules/historical-data/historical-data.module';
+import { StripeModule } from './modules/stripe/stripe.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { HistoricalDataModule } from './modules/historical-data/historical-data.
     WalletsModule,
     NotificationsModule,
     HistoricalDataModule,
+    StripeModule,
     HealthModule,
   ],
   providers: [

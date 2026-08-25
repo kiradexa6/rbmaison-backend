@@ -17,6 +17,7 @@ import { ResponseInterceptor } from './shared/common/interceptors/response.inter
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
+    rawBody: true,
   });
 
   const configService = app.get(ConfigService);

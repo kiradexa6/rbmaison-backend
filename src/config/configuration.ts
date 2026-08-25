@@ -35,4 +35,8 @@ export default () => ({
     ),
     maxTotalRows: parseInt(process.env.HISTORICAL_MAX_TOTAL_ROWS ?? '400', 10),
   },
+  stripe: {
+    secretKey: readEnvString(process.env, 'STRIPE_SECRET_KEY'),
+    webhookSecret: readEnvString(process.env, 'STRIPE_WEBHOOK_SECRET'),
+  },
 });
