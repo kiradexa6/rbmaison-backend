@@ -1,4 +1,65 @@
 import { Request } from 'express';
+import { extractSupabaseProjectRef } from '../../infrastructure/supabase/supabase-project.util';
+
+export type AccessTokenDescription = {
+  present: boolean;
+  format: 'missing' | 'jwt' | 'non-jwt';
+  projectRef: string | null;
+  expired: boolean | null;
+};
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  try {
+    const padded = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const remainder = padded.length % 4;
+    const withPad =
+      remainder === 0 ? padded : padded + '='.repeat(4 - remainder);
+    return JSON.parse(Buffer.from(withPad, 'base64').toString('utf8')) as Record<
+      string,
+      unknown
+    >;
+  } catch {
+    return null;
+  }
+}
+
+export function describeAccessToken(
+  token: string | undefined,
+): AccessTokenDescription {
+  if (!token) {
+    return {
+      present: false,
+      format: 'missing',
+      projectRef: null,
+      expired: null,
+    };
+  }
+
+  const payload = decodeJwtPayload(token);
+  if (!payload) {
+    return {
+      present: true,
+      format: 'non-jwt',
+      projectRef: null,
+      expired: null,
+    };
+  }
+
+  const iss = typeof payload.iss === 'string' ? payload.iss : undefined;
+  const exp = typeof payload.exp === 'number' ? payload.exp : undefined;
+
+  return {
+    present: true,
+    format: 'jwt',
+    projectRef: extractSupabaseProjectRef(iss),
+    expired: typeof exp === 'number' ? exp * 1000 <= Date.now() : null,
+  };
+}
 
 function parseCookieHeader(header: string | undefined): Record<string, string> {
   if (!header) {
