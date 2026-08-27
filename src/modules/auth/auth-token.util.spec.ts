@@ -22,6 +22,14 @@ describe('extractAccessToken', () => {
     ).toBe('admin-access-token');
   });
 
+  it('reads bearer tokens case-insensitively', () => {
+    expect(
+      extractAccessToken(
+        requestOf({ authorization: 'bearer customer-access-token' }),
+      ),
+    ).toBe('customer-access-token');
+  });
+
   it('reads Supabase auth cookies when Authorization header is absent', () => {
     const cookie = encodeURIComponent(
       JSON.stringify({ access_token: 'cookie-access-token' }),

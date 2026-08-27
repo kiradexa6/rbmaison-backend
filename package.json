@@ -28,7 +28,8 @@
     "db:push": "npx supabase db push",
     "db:diff": "npx supabase db diff",
     "verify:production-db": "ts-node scripts/verify-production-alignment.ts",
-    "verify:control-center": "ts-node scripts/verify-control-center-apis.ts"
+    "verify:control-center": "ts-node scripts/verify-control-center-apis.ts",
+    "verify:stripe-checkout": "ts-node scripts/verify-stripe-checkout.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

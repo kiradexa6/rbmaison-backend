@@ -69,7 +69,7 @@ describe('Environment Validation', () => {
   it('should accept production configuration with Supabase credentials', () => {
     const result = validate({
       NODE_ENV: 'production',
-      SUPABASE_URL: 'https://example.supabase.co',
+      SUPABASE_URL: 'https://elvypbekopexhcojpwki.supabase.co',
       SUPABASE_ANON_KEY: 'anon-key',
       SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
       SUPABASE_JWT_SECRET: 'jwt-secret',
@@ -77,8 +77,24 @@ describe('Environment Validation', () => {
     });
 
     expect(result.NODE_ENV).toBe('production');
-    expect(result.SUPABASE_URL).toBe('https://example.supabase.co');
+    expect(result.SUPABASE_URL).toBe(
+      'https://elvypbekopexhcojpwki.supabase.co',
+    );
+    expect(result.SUPABASE_PROJECT_REF).toBe('elvypbekopexhcojpwki');
     expect(result.SUPABASE_JWT_SECRET).toBe('jwt-secret');
+  });
+
+  it('defaults production SUPABASE_PROJECT_REF to the live Lovable project', () => {
+    expect(() =>
+      validate({
+        NODE_ENV: 'production',
+        SUPABASE_URL: 'https://sbcyoaswsjfhhkypdniu.supabase.co',
+        SUPABASE_ANON_KEY: 'anon-key',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
+        SUPABASE_JWT_SECRET: 'jwt-secret',
+        CORS_ORIGIN: 'https://rbmaisons.com',
+      }),
+    ).toThrow(/does not match SUPABASE_PROJECT_REF/);
   });
 
   it('should reject local Supabase URLs in production', () => {
@@ -111,7 +127,7 @@ describe('Environment Validation', () => {
   it('trims trailing whitespace and newlines on exact production variable names', () => {
     const result = validate({
       NODE_ENV: 'production\n',
-      SUPABASE_URL: 'https://sbcyoaswsjfhhkypdniu.supabase.co \n',
+      SUPABASE_URL: 'https://elvypbekopexhcojpwki.supabase.co \n',
       SUPABASE_ANON_KEY: ' anon-key\r\n',
       SUPABASE_SERVICE_ROLE_KEY: 'service-role-key  ',
       SUPABASE_JWT_SECRET: '\tjwt-secret',
@@ -120,7 +136,7 @@ describe('Environment Validation', () => {
 
     expect(result.NODE_ENV).toBe('production');
     expect(result.SUPABASE_URL).toBe(
-      'https://sbcyoaswsjfhhkypdniu.supabase.co',
+      'https://elvypbekopexhcojpwki.supabase.co',
     );
     expect(result.SUPABASE_ANON_KEY).toBe('anon-key');
     expect(result.SUPABASE_SERVICE_ROLE_KEY).toBe('service-role-key');

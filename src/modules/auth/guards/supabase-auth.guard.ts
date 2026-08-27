@@ -6,18 +6,26 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { SupabaseService } from '../../../infrastructure/supabase/supabase.service';
-import { describeAccessToken, extractAccessToken } from '../auth-token.util';
 import { extractSupabaseProjectRef } from '../../../infrastructure/supabase/supabase-project.util';
+import { describeAccessToken, extractAccessToken } from '../auth-token.util';
 import { normalizeUserRole } from '../role.util';
 import { AuthenticatedUser } from '../interfaces/authenticated-user.interface';
+import {
+  SupabaseAccessTokenError,
+  verifySupabaseAccessToken,
+} from '../supabase-access-token.util';
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
   private readonly logger = new Logger(SupabaseAuthGuard.name);
 
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly supabaseService: SupabaseService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     if (!this.supabaseService.isConfigured()) {
@@ -35,12 +43,40 @@ export class SupabaseAuthGuard implements CanActivate {
       throw new UnauthorizedException('Unauthorized');
     }
 
-    const { data, error } = await this.supabaseService
-      .getAdminClient()
-      .auth.getUser(token);
+    const tokenMeta = describeAccessToken(token);
+    const expectedProject = extractSupabaseProjectRef(
+      this.supabaseService.getPublicUrl(),
+    );
+    const projectMismatch =
+      Boolean(tokenMeta.projectRef) &&
+      Boolean(expectedProject) &&
+      tokenMeta.projectRef !== expectedProject;
 
-    if (error || !data.user) {
-      this.logUnauthorized(request, 'invalid token', token);
+    if (projectMismatch) {
+      this.logUnauthorized(request, 'supabase project mismatch', token);
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    if (tokenMeta.expired === true) {
+      this.logUnauthorized(request, 'expired token', token);
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    const supabaseUrl = this.supabaseService.getPublicUrl();
+    const jwtSecret = this.configService.get<string>('supabase.jwtSecret');
+    if (!supabaseUrl || !jwtSecret) {
+      throw new ServiceUnavailableException('Supabase auth is not configured');
+    }
+
+    let verifiedUser: { userId: string; email: string };
+    try {
+      verifiedUser = verifySupabaseAccessToken(token, supabaseUrl, jwtSecret);
+    } catch (error) {
+      const reason =
+        error instanceof SupabaseAccessTokenError
+          ? error.message
+          : 'invalid token';
+      this.logUnauthorized(request, reason, token);
       throw new UnauthorizedException('Unauthorized');
     }
 
@@ -48,7 +84,7 @@ export class SupabaseAuthGuard implements CanActivate {
       .getAdminClient()
       .from('profiles')
       .select('role, status')
-      .eq('user_id', data.user.id)
+      .eq('user_id', verifiedUser.userId)
       .maybeSingle();
 
     if (profileError || !profile) {
@@ -68,8 +104,8 @@ export class SupabaseAuthGuard implements CanActivate {
     }
 
     request.user = {
-      id: data.user.id,
-      email: data.user.email ?? '',
+      id: verifiedUser.userId,
+      email: verifiedUser.email,
       role,
       status: profile.status,
       accessToken: token,

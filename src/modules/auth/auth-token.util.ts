@@ -116,9 +116,10 @@ function readSupabaseSessionToken(raw: string): string | undefined {
 
 export function extractAccessToken(request: Request): string | undefined {
   const authHeader = request.headers.authorization;
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.slice('Bearer '.length).trim();
-    if (token.length > 0) {
+  if (typeof authHeader === 'string') {
+    const match = authHeader.match(/^Bearer\s+(.+)$/i);
+    const token = match?.[1]?.trim();
+    if (token) {
       return token;
     }
   }

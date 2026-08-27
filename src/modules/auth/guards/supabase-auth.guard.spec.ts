@@ -1,37 +1,74 @@
+import { createHmac } from 'node:crypto';
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { SupabaseAuthGuard } from './supabase-auth.guard';
 
-describe('SupabaseAuthGuard', () => {
-  it('loads profile through the service role after validating JWT', async () => {
-    const getUser = jest.fn().mockResolvedValue({
-      data: { user: { id: 'user-id', email: 'admin@rbmaison.test' } },
-      error: null,
-    });
-    const maybeSingle = jest.fn().mockResolvedValue({
-      data: { role: 'admin', status: 'active' },
-      error: null,
-    });
-    const from = jest.fn().mockReturnValue({
-      select: jest.fn().mockReturnValue({
-        eq: jest.fn().mockReturnValue({ maybeSingle }),
-      }),
-    });
-    const getAdminClient = jest.fn().mockReturnValue({
-      auth: { getUser },
-      from,
-    });
+const supabaseUrl = 'https://elvypbekopexhcojpwki.supabase.co';
+const jwtSecret = 'test-jwt-secret';
 
-    const guard = new SupabaseAuthGuard({
+function signToken(payload: Record<string, unknown>): string {
+  const header = Buffer.from(
+    JSON.stringify({ alg: 'HS256', typ: 'JWT' }),
+  ).toString('base64url');
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = createHmac('sha256', jwtSecret)
+    .update(`${header}.${body}`)
+    .digest('base64url');
+  return `${header}.${body}.${signature}`;
+}
+
+function buildGuard(options: {
+  profile?: { role: string; status: string } | null;
+  profileError?: { message: string } | null;
+}) {
+  const maybeSingle = jest.fn().mockResolvedValue({
+    data: options.profile ?? null,
+    error: options.profileError ?? null,
+  });
+  const from = jest.fn().mockReturnValue({
+    select: jest.fn().mockReturnValue({
+      eq: jest.fn().mockReturnValue({ maybeSingle }),
+    }),
+  });
+  const getAdminClient = jest.fn().mockReturnValue({ from });
+
+  const guard = new SupabaseAuthGuard(
+    {
+      get: jest.fn((key: string) => {
+        if (key === 'supabase.jwtSecret') {
+          return jwtSecret;
+        }
+        return undefined;
+      }),
+    } as never,
+    {
       isConfigured: () => true,
-      getPublicUrl: () => 'https://sbcyoaswsjfhhkypdniu.supabase.co',
+      getPublicUrl: () => supabaseUrl,
       getAdminClient,
       asUser: jest.fn(),
-    } as never);
+    } as never,
+  );
+
+  return { guard, from, maybeSingle };
+}
+
+describe('SupabaseAuthGuard', () => {
+  it('loads profile after validating a Supabase JWT locally', async () => {
+    const token = signToken({
+      iss: `${supabaseUrl}/auth/v1`,
+      aud: 'authenticated',
+      sub: 'user-id',
+      email: 'customer@rbmaison.test',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+    const { guard, from } = buildGuard({
+      profile: { role: 'customer', status: 'active' },
+    });
 
     const request = {
-      headers: { authorization: 'Bearer valid-token' },
-      method: 'GET',
-      url: '/api/v1/admin/users',
+      headers: { authorization: `Bearer ${token}` },
+      method: 'POST',
+      originalUrl: '/api/v1/orders/order-id/stripe/checkout',
+      url: '/api/v1/orders/order-id/stripe/checkout',
       ip: '127.0.0.1',
     };
     const context = {
@@ -39,69 +76,24 @@ describe('SupabaseAuthGuard', () => {
     } as ExecutionContext;
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
-    expect(getUser).toHaveBeenCalledWith('valid-token');
     expect(from).toHaveBeenCalledWith('profiles');
     expect(request.user).toEqual(
       expect.objectContaining({
         id: 'user-id',
-        role: 'admin',
-        accessToken: 'valid-token',
+        role: 'customer',
+        accessToken: token,
       }),
     );
   });
 
   it('rejects requests without a token', async () => {
-    const guard = new SupabaseAuthGuard({
-      isConfigured: () => true,
-      getPublicUrl: () => 'https://sbcyoaswsjfhhkypdniu.supabase.co',
-      getAdminClient: jest.fn(),
-      asUser: jest.fn(),
-    } as never);
-
+    const { guard } = buildGuard({});
     const context = {
       switchToHttp: () => ({
         getRequest: () => ({
           headers: {},
-          method: 'GET',
-          url: '/api/v1/admin/users',
-          ip: '127.0.0.1',
-        }),
-      }),
-    } as ExecutionContext;
-
-    await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
-  });
-
-  it('rejects JWTs issued by a different Supabase project', async () => {
-    const getUser = jest.fn().mockResolvedValue({
-      data: { user: null },
-      error: { message: 'invalid JWT' },
-    });
-    const guard = new SupabaseAuthGuard({
-      isConfigured: () => true,
-      getPublicUrl: () => 'https://sbcyoaswsjfhhkypdniu.supabase.co',
-      getAdminClient: () => ({ auth: { getUser } }),
-      asUser: jest.fn(),
-    } as never);
-
-    const header = Buffer.from(
-      JSON.stringify({ alg: 'none', typ: 'JWT' }),
-    ).toString('base64url');
-    const payload = Buffer.from(
-      JSON.stringify({
-        iss: 'https://elvypbekopexhcojpwki.supabase.co/auth/v1',
-        exp: Math.floor(Date.now() / 1000) + 3600,
-      }),
-    ).toString('base64url');
-    const token = `${header}.${payload}.sig`;
-
-    const context = {
-      switchToHttp: () => ({
-        getRequest: () => ({
-          headers: { authorization: `Bearer ${token}` },
           method: 'POST',
+          originalUrl: '/api/v1/orders/order-id/stripe/checkout',
           url: '/api/v1/orders/order-id/stripe/checkout',
           ip: '127.0.0.1',
         }),
@@ -111,6 +103,34 @@ describe('SupabaseAuthGuard', () => {
     await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
-    expect(getUser).toHaveBeenCalledWith(token);
+  });
+
+  it('rejects JWTs issued by a different Supabase project before profile lookup', async () => {
+    const token = signToken({
+      iss: 'https://sbcyoaswsjfhhkypdniu.supabase.co/auth/v1',
+      aud: 'authenticated',
+      sub: 'user-id',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+    const { guard, from } = buildGuard({
+      profile: { role: 'customer', status: 'active' },
+    });
+
+    const context = {
+      switchToHttp: () => ({
+        getRequest: () => ({
+          headers: { authorization: `Bearer ${token}` },
+          method: 'POST',
+          originalUrl: '/api/v1/orders/order-id/stripe/checkout',
+          url: '/api/v1/orders/order-id/stripe/checkout',
+          ip: '127.0.0.1',
+        }),
+      }),
+    } as ExecutionContext;
+
+    await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+    expect(from).not.toHaveBeenCalled();
   });
 });

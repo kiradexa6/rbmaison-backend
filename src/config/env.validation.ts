@@ -9,6 +9,7 @@ import {
   Min,
   validateSync,
 } from 'class-validator';
+import { LIVE_PRODUCTION_SUPABASE_PROJECT_REF } from '../infrastructure/supabase/live-production-project';
 import {
   assertProductionSupabaseTarget,
   isLocalSupabaseUrl,
@@ -215,6 +216,11 @@ export function validate(config: Record<string, unknown>) {
       throw new Error(
         'Production cannot use a local Supabase URL. Set SUPABASE_URL to the hosted RB Maison project.',
       );
+    }
+
+    if (!validatedConfig.SUPABASE_PROJECT_REF) {
+      validatedConfig.SUPABASE_PROJECT_REF =
+        LIVE_PRODUCTION_SUPABASE_PROJECT_REF;
     }
 
     assertProductionSupabaseTarget(
